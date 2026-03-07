@@ -1,0 +1,11 @@
+42:    <div id="gameUI">
+43-        <span id="score">分數: 0</span>
+44-        <span id="stage">大關卡: 1</span>
+45-        <span id="progress">進度: 0m</span>
+46-        <span id="health">生命: 100</span>
+47-        <span id="weapon">武器: 小雞啄米槍</span>
+48-        <span id="skillStatus">技能: 就緒! (S)</span>
+49-        <span id="petStatus">寵物: 未召喚</span>
+50-    </div>
+51-
+52-    <div id="resourceBarsContainer">

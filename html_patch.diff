@@ -1,0 +1,31 @@
+<<<<<<< SEARCH
+    <div id="gameUI">
+        <span id="score">分數: 0</span>
+        <span id="stage">大關卡: 1</span>
+        <span id="progress">進度: 0m</span>
+        <span id="health">生命: 100</span>
+        <span id="weapon">武器: 小雞啄米槍</span>
+        <span id="skillStatus">技能: 就緒! (S)</span>
+        <span id="petStatus">寵物: 未召喚</span>
+    </div>
+=======
+    <div id="gameUI">
+        <span id="score">分數: 0</span>
+        <span id="coins">金幣: 0</span>
+        <span id="stage">大關卡: 1</span>
+        <span id="progress">進度: 0m</span>
+        <span id="health">生命: 100</span>
+        <span id="weapon">武器: 小雞啄米槍</span>
+        <span id="skillStatus">技能: 就緒! (S)</span>
+        <span id="petStatus">寵物: 未召喚</span>
+    </div>
+
+    <div id="shopModal">
+        <h2>★ 神秘商店 ★</h2>
+        <div id="shopCoinDisplay">擁有金幣: 0</div>
+        <button id="btnHeal" class="shop-btn">恢復生命 (50 金幣)</button>
+        <button id="btnDmg" class="shop-btn">攻擊力 +20% (100 金幣)</button>
+        <button id="btnMaxHp" class="shop-btn">最大生命 +20 (150 金幣)</button>
+        <button id="closeShopBtn" class="shop-btn">繼續前進</button>
+    </div>
+>>>>>>> REPLACE
