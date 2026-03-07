@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=800, initial-scale=1.0">
+    <meta name="viewport" content="width=1024, initial-scale=1.0">
     <title>戰鬥雞：無盡征途 v2</title>
     <style>
         body {
@@ -19,7 +19,7 @@
             background-color: rgba(255, 0, 0, 0.5); pointer-events: none; opacity: 0; transition: opacity 0.1s ease-in-out;
         }
         #gameUI {
-            margin-top: 10px; font-size: 18px; display: flex; justify-content: space-around; width: 800px; flex-wrap: wrap; position: relative;
+            margin-top: 10px; font-size: 18px; display: flex; justify-content: space-around; width: 1024px; flex-wrap: wrap; position: relative;
             background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
         }
         #gameUI span { margin: 2px 10px; text-shadow: 1px 1px 2px black; font-weight: bold; }
@@ -75,6 +75,7 @@
         <button id="btnHeal" class="shop-btn">恢復生命 (50 金幣)</button>
         <button id="btnDmg" class="shop-btn">攻擊力 +20% (100 金幣)</button>
         <button id="btnMaxHp" class="shop-btn">最大生命 +20 (150 金幣)</button>
+        <button id="btnVehicle" class="shop-btn">解鎖/呼叫 機甲載具 (500 金幣)</button>
         <button id="closeShopBtn" class="shop-btn">繼續前進</button>
     </div>
 
@@ -90,13 +91,16 @@
     </div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <canvas id="gameCanvas" width="1024" height="576"></canvas>
         <div id="damageOverlay"></div>
     </div>
     <div id="controlsInfo">
         ← →/A D: 移動 | ↑/W: 跳躍 | 空白鍵: 射擊 | S: 技能 | Q/E: 切換武器 | F: 消耗鬥志回血 | P: 召喚寵物
     </div>
-    <button id="startButton" class="button">開始遊戲</button>
+    <div style="display: flex; gap: 20px;">
+        <button id="startButton" class="button">開始遊戲</button>
+        <button id="mainShopButton" class="button" style="background-color: #f39c12; box-shadow: 0 4px 0 #d35400;">進入商店</button>
+    </div>
     <div id="messageDisplay" style="font-size: 22px; margin-top: 8px; color: #e67e22;"></div>
 
 <script>
@@ -153,11 +157,28 @@ const shopCoinDisplay = document.getElementById('shopCoinDisplay');
 const btnHeal = document.getElementById('btnHeal');
 const btnDmg = document.getElementById('btnDmg');
 const btnMaxHp = document.getElementById('btnMaxHp');
+const btnVehicle = document.getElementById('btnVehicle');
 const closeShopBtn = document.getElementById('closeShopBtn');
 
+let mouseX = 0;
+let mouseY = 0;
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+});
+
 let score = 0;
-let coins = 0;
+let coins = parseInt(localStorage.getItem('savedCoins')) || 0;
 let currentMajorStage = 1;
+
+function updatePersistentCoins(amount) {
+    coins += amount;
+    localStorage.setItem('savedCoins', coins);
+    if(coinsDisplay) coinsDisplay.textContent = `金幣: ${coins}`;
+    if(shopCoinDisplay) shopCoinDisplay.textContent = `擁有金幣: ${coins}`;
+}
 const MAX_STAGES = 10;
 let playerHealth = 100;
 let gameRunning = false;
@@ -423,6 +444,13 @@ const player = {
     dashCooldown: 0,
     dashTimer: 0,
     isDashing: false,
+    hasVehicle: false,
+    inVehicle: false,
+    vehicleHp: 200,
+    vehicleMaxHp: 200,
+    vehicleSummoning: false,
+    vehicleSummonTimer: 0,
+    vehicleSummonY: 0,
 
     healWithGrit: function() {
         if (this.grit >= this.maxGrit && playerHealth > 0 && playerHealth < this.maxHealth) {
@@ -466,30 +494,73 @@ const player = {
         }
 
         this.lastShotTime = now;
+
+        if (this.inVehicle) {
+            playSound('player_shoot'); // Could use heavier sound
+            const targetWorldX = mouseX + cameraX;
+            const targetWorldY = mouseY;
+            const weaponX = this.worldX + this.width / 2;
+            const weaponY = this.worldY + this.height / 2;
+            const angle = Math.atan2(targetWorldY - weaponY, targetWorldX - weaponX);
+
+            if (targetWorldX > weaponX) this.facingRight = true;
+            else this.facingRight = false;
+
+            const muzzleX = weaponX + Math.cos(angle) * 45;
+            const muzzleY = weaponY + Math.sin(angle) * 45;
+
+            muzzleFlashes.push({ x: muzzleX, y: muzzleY, alpha: 1 });
+
+            // Mech shoots powerful explosive rounds
+            this.bullets.push({
+                worldX: muzzleX, worldY: muzzleY,
+                radius: 12, color: '#f1c40f',
+                speedX: Math.cos(angle) * 12,
+                speedY: Math.sin(angle) * 12,
+                damage: 40 * this.damageMultiplier,
+                isExplosive: true
+            });
+            return; // Skip normal weapon logic
+        }
+
         playSound('player_shoot');
         const bulletY = this.worldY + this.height / 2 - weaponStats.bulletRadius;
 
-        const muzzleXOffset = this.facingRight ? this.width + 10 : -10;
-        const muzzleYOffset = this.height * 0.55;
-        muzzleFlashes.push({ x: this.worldX + muzzleXOffset, y: this.worldY + muzzleYOffset, alpha: 1 });
+        const weaponX = this.worldX + this.width / 2;
+        const weaponY = this.worldY + this.height * 0.5;
 
-        const bulletXOffset = this.facingRight ? this.width : 0;
+        // Target is relative to screen. We need world coordinates for the mouse.
+        const targetWorldX = mouseX + cameraX;
+        const targetWorldY = mouseY;
+
+        const angle = Math.atan2(targetWorldY - weaponY, targetWorldX - weaponX);
+
+        // Update facing direction based on mouse
+        if (targetWorldX > weaponX) this.facingRight = true;
+        else this.facingRight = false;
+
+        const muzzleX = weaponX + Math.cos(angle) * (this.width/2 + 10);
+        const muzzleY = weaponY + Math.sin(angle) * (this.width/2 + 10);
+
+        muzzleFlashes.push({ x: muzzleX, y: muzzleY, alpha: 1 });
 
         if (weaponStats.pattern === 'single' || weaponStats.pattern === 'single_big') {
             this.bullets.push({
-                worldX: this.worldX + bulletXOffset, worldY: bulletY,
+                worldX: muzzleX, worldY: muzzleY,
                 radius: weaponStats.bulletRadius, color: weaponStats.bulletColor,
-                speedX: (this.facingRight ? 1 : -1) * weaponStats.bulletSpeed, speedY: 0,
+                speedX: Math.cos(angle) * weaponStats.bulletSpeed,
+                speedY: Math.sin(angle) * weaponStats.bulletSpeed,
                 damage: weaponStats.damage * this.damageMultiplier
             });
         } else if (weaponStats.pattern === 'triple_spread') {
-            const angles = [-0.2, 0, 0.2];
-            angles.forEach(angle => {
+            const spreadAngles = [-0.2, 0, 0.2];
+            spreadAngles.forEach(spread => {
+                const finalAngle = angle + spread;
                 this.bullets.push({
-                    worldX: this.worldX + bulletXOffset, worldY: bulletY,
+                    worldX: muzzleX, worldY: muzzleY,
                     radius: weaponStats.bulletRadius, color: weaponStats.bulletColor,
-                    speedX: Math.cos(angle) * (this.facingRight ? 1 : -1) * weaponStats.bulletSpeed,
-                    speedY: Math.sin(angle) * weaponStats.bulletSpeed,
+                    speedX: Math.cos(finalAngle) * weaponStats.bulletSpeed,
+                    speedY: Math.sin(finalAngle) * weaponStats.bulletSpeed,
                     damage: weaponStats.damage * this.damageMultiplier
                 });
             });
@@ -614,6 +685,42 @@ const player = {
     draw: function() {
         const screenX = this.worldX - cameraX;
 
+        if (this.vehicleSummoning) {
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(screenX - 10, this.vehicleSummonY - cameraX * 0, 60, 60);
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(screenX, this.vehicleSummonY + 20, 40, 20);
+        }
+
+        if (this.inVehicle) {
+            ctx.save();
+            ctx.translate(screenX + this.width/2, this.worldY + this.height/2);
+            ctx.scale(this.facingRight ? 1 : -1, 1);
+
+            // Draw Mech
+            ctx.fillStyle = '#7f8c8d'; // Body
+            ctx.fillRect(-25, -25, 50, 50);
+            ctx.fillStyle = '#2c3e50'; // Cockpit
+            ctx.fillRect(-15, -15, 30, 20);
+            ctx.fillStyle = '#f1c40f'; // Player eye inside
+            ctx.fillRect(-5, -10, 5, 5);
+            ctx.fillStyle = '#bdc3c7'; // Legs
+            ctx.fillRect(-20, 25, 10, 15);
+            ctx.fillRect(10, 25, 10, 15);
+
+            // Giant Cannon
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(10, 0, 40, 15);
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(45, 2, 8, 11);
+
+            ctx.restore();
+
+            // Draw vehicle HP bar overhead
+            ctx.fillStyle = 'red'; ctx.fillRect(screenX - 5, this.worldY - 15, 50, 5);
+            ctx.fillStyle = '#f1c40f'; ctx.fillRect(screenX - 5, this.worldY - 15, 50 * (this.vehicleHp / this.vehicleMaxHp), 5);
+
+        } else {
         // 先用貼圖（小雞 4 幀）
         const sprite = IMAGES.playerChick;
         if (sprite) {
@@ -667,35 +774,31 @@ const player = {
                 ctx.lineTo(beakBaseX, this.worldY + this.height * 0.65); ctx.closePath(); ctx.fill();
 
                 const currentWeaponKey = this.weapons[this.currentWeaponIndex];
-                const weaponY = this.worldY + this.height * 0.5;
+                const weaponCenterX = screenX + this.width / 2;
+                const weaponCenterY = this.worldY + this.height * 0.5;
+
+                const targetWorldX = mouseX + cameraX;
+                const targetWorldY = mouseY;
+                const angle = Math.atan2(targetWorldY - (this.worldY + this.height/2), targetWorldX - (this.worldX + this.width/2));
+
+                ctx.save();
+                ctx.translate(weaponCenterX, weaponCenterY);
+                ctx.rotate(angle);
+
                 ctx.fillStyle = '#666';
-                if (this.facingRight) {
-                    const weaponX = screenX + this.width - 10;
-                    switch(currentWeaponKey) {
-                        case 'peck_cannon': ctx.fillRect(weaponX, weaponY, 20, 8); break;
-                        case 'feather_spread':
-                            ctx.fillRect(weaponX, weaponY - 4, 25, 16);
-                            ctx.fillRect(weaponX + 25, weaponY - 2, 5, 12);
-                            break;
-                        case 'egg_launcher':
-                            ctx.fillStyle = '#4a4a4a'; ctx.fillRect(weaponX - 5, weaponY - 8, 30, 16);
-                            ctx.beginPath(); ctx.arc(weaponX + 25, weaponY, 10, 0, Math.PI * 2); ctx.fill();
-                            break;
-                    }
-                } else {
-                    const weaponX = screenX - 10;
-                    switch(currentWeaponKey) {
-                        case 'peck_cannon': ctx.fillRect(weaponX, weaponY, 20, 8); break;
-                        case 'feather_spread':
-                            ctx.fillRect(weaponX - 15, weaponY - 4, 25, 16);
-                            ctx.fillRect(weaponX - 20, weaponY - 2, 5, 12);
-                            break;
-                        case 'egg_launcher':
-                            ctx.fillStyle = '#4a4a4a'; ctx.fillRect(weaponX - 15, weaponY - 8, 30, 16);
-                            ctx.beginPath(); ctx.arc(weaponX - 15, weaponY, 10, 0, Math.PI * 2); ctx.fill();
-                            break;
-                    }
+                const weaponX = 10;
+                switch(currentWeaponKey) {
+                    case 'peck_cannon': ctx.fillRect(weaponX, -4, 20, 8); break;
+                    case 'feather_spread':
+                        ctx.fillRect(weaponX, -8, 25, 16);
+                        ctx.fillRect(weaponX + 25, -6, 5, 12);
+                        break;
+                    case 'egg_launcher':
+                        ctx.fillStyle = '#4a4a4a'; ctx.fillRect(weaponX, -8, 30, 16);
+                        ctx.beginPath(); ctx.arc(weaponX + 30, 0, 10, 0, Math.PI * 2); ctx.fill();
+                        break;
                 }
+                ctx.restore();
                 ctx.fillStyle = '#DAA520';
                 ctx.fillRect(screenX + this.width * 0.2, this.worldY + this.height * 0.4, this.width * 0.6, 8);
                 ctx.fillStyle = '#FFA500';
@@ -704,6 +807,7 @@ const player = {
                 ctx.fillRect(screenX + this.width * 0.7 - 2, legY, 4, 10);
             }
         }
+        } // End else if not in vehicle
 
         // 玩家子彈（貼圖優先）
         this.bullets.forEach(bullet => {
@@ -720,6 +824,23 @@ const player = {
     },
 
     update: function() {
+        if (this.vehicleSummoning) {
+            this.vehicleSummonTimer++;
+            this.vehicleSummonY += 15;
+            if (this.vehicleSummonY >= this.worldY) {
+                this.vehicleSummoning = false;
+                this.inVehicle = true;
+                this.vehicleHp = this.vehicleMaxHp;
+                triggerScreenShake(15, 500);
+                playSound('particle_burst', {volume: 0.5});
+                createParticles(this.worldX + this.width/2, this.worldY + this.height, 50, '#7f8c8d', 8);
+                messageDisplay.textContent = "機甲已部署！";
+                setTimeout(() => messageDisplay.textContent = "", 2000);
+                healthDisplay.textContent = `機甲: ${this.vehicleHp}`;
+            }
+            return; // Freeze player while summoning
+        }
+
         if (this.invincibleTimer > 0) {
             this.invincibleTimer -= 1000/60;
             if (this.invincibleTimer <= 0) { this.invincible = false; }
@@ -1493,6 +1614,13 @@ document.addEventListener('keydown', (e) => {
     if (e.code === 'KeyQ' || e.code === 'KeyE') player.switchWeapon();
     if (e.code === 'KeyF') player.healWithGrit();
     if (e.code === 'KeyP') player.summonPet();
+    if (e.code === 'KeyV' && player.hasVehicle && !player.inVehicle && !player.vehicleSummoning) {
+        player.vehicleSummoning = true;
+        player.vehicleSummonTimer = 0;
+        player.vehicleSummonY = -100;
+        player.dx = 0; player.dy = 0;
+        playSound('skill_use'); // Use skill sound for incoming
+    }
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         if (!player.isDashing && player.dashCooldown <= 0 && gameRunning && !gameOver) {
             player.isDashing = true;
@@ -1608,20 +1736,40 @@ function checkCollisions() {
                 bullet.worldY - bullet.radius < player.worldY + player.height && bullet.worldY + bullet.radius > player.worldY) {
                 source.bullets.splice(bulletIndex, 1);
                 if (!player.invincible) {
-                    playerHealth -= bullet.damage; playSound('player_hit'); triggerScreenShake(5, 150);
+                    playSound('player_hit'); triggerScreenShake(5, 150);
                     damageOverlay.style.opacity = 1; setTimeout(() => damageOverlay.style.opacity = 0, 100);
                     player.invincible = true; player.invincibleTimer = 1000;
-                    if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                    if (player.inVehicle) {
+                        player.vehicleHp -= bullet.damage;
+                        if (player.vehicleHp <= 0) {
+                            player.inVehicle = false; player.hasVehicle = false; // Destroyed
+                            createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 50, '#e74c3c', 10, true);
+                            player.dy = -10; // Eject player
+                        }
+                    } else {
+                        playerHealth -= bullet.damage;
+                        if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                    }
                 }
             }
         });
         if (player.worldX < source.worldX + source.width && player.worldX + player.width > source.worldX &&
             player.worldY < source.worldY + source.height && player.worldY + player.height > source.worldY) {
             if (!player.invincible) {
-                playerHealth -= source.contactDamage; playSound('player_hit', {volume: 0.15}); triggerScreenShake(8, 200);
+                playSound('player_hit', {volume: 0.15}); triggerScreenShake(8, 200);
                 damageOverlay.style.opacity = 1; setTimeout(() => damageOverlay.style.opacity = 0, 100);
                 player.invincible = true; player.invincibleTimer = 800;
-                if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                if (player.inVehicle) {
+                    player.vehicleHp -= source.contactDamage;
+                    if (player.vehicleHp <= 0) {
+                        player.inVehicle = false; player.hasVehicle = false;
+                        createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 50, '#e74c3c', 10, true);
+                        player.dy = -10;
+                    }
+                } else {
+                    playerHealth -= source.contactDamage;
+                    if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                }
             }
         }
     });
@@ -1630,10 +1778,20 @@ function checkCollisions() {
         const dy = player.worldY + player.height/2 - hazard.y;
         if(Math.sqrt(dx*dx + dy*dy) < player.width/2 + hazard.radius){
             if (!player.invincible) {
-                playerHealth -= hazard.damage; playSound('player_hit', {volume: 0.1}); triggerScreenShake(3, 100);
+                playSound('player_hit', {volume: 0.1}); triggerScreenShake(3, 100);
                 damageOverlay.style.opacity = 1; setTimeout(() => damageOverlay.style.opacity = 0, 100);
                 player.invincible = true; player.invincibleTimer = 500;
-                if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                if (player.inVehicle) {
+                    player.vehicleHp -= hazard.damage;
+                    if (player.vehicleHp <= 0) {
+                        player.inVehicle = false; player.hasVehicle = false;
+                        createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 50, '#e74c3c', 10, true);
+                        player.dy = -10;
+                    }
+                } else {
+                    playerHealth -= hazard.damage;
+                    if (playerHealth <= 0) { playerHealth = 0; gameOver = true; }
+                }
             }
         }
     });
@@ -1645,8 +1803,7 @@ function checkCollisions() {
             collectibles.splice(index, 1);
             if (item.type === 'weapon') { player.addWeapon(item.value); }
             else if (item.type === 'coin') {
-                coins += item.value;
-                coinsDisplay.textContent = '金幣: ' + coins;
+                updatePersistentCoins(item.value);
                 playSound('pickup_health', {volume: 0.1}); // Reuse sound for now
             }
         }
@@ -1897,7 +2054,6 @@ function drawBackground() {
     gradient.addColorStop(0, skyColor1); gradient.addColorStop(1, skyColor2);
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 疊加：白天藍天 / 夜晚星空（貼圖存在才畫）
     if (IMAGES.sky && (timeOfDay >= dawnTime && timeOfDay <= duskTime)) {
         ctx.drawImage(IMAGES.sky, 0, 0, canvas.width, canvas.height);
     }
@@ -1909,6 +2065,29 @@ function drawBackground() {
             }
         }
     }
+
+    // Draw Parallax Mountains Layer 1 (Back)
+    ctx.fillStyle = timeOfDay > duskTime || timeOfDay < dawnTime ? '#111820' : '#2c3e50';
+    const parallax1 = cameraX * 0.2;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+        const xStart = (i * 600) - (parallax1 % 600);
+        ctx.moveTo(xStart - 100, canvas.height);
+        ctx.lineTo(xStart + 300, canvas.height - 250);
+        ctx.lineTo(xStart + 700, canvas.height);
+    }
+    ctx.fill();
+
+    // Draw Parallax Hills Layer 2 (Mid)
+    ctx.fillStyle = timeOfDay > duskTime || timeOfDay < dawnTime ? '#1a252f' : '#34495e';
+    const parallax2 = cameraX * 0.4;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const xStart = (i * 400) - (parallax2 % 400);
+        ctx.moveTo(xStart - 50, canvas.height);
+        ctx.quadraticCurveTo(xStart + 200, canvas.height - 180, xStart + 450, canvas.height);
+    }
+    ctx.fill();
 
     ctx.save();
     const celestialAngle = (timeOfDay / cycleDuration) * 2 * Math.PI - Math.PI / 2;
@@ -1946,54 +2125,80 @@ function lerpColor(a, b, amount) {
 
 
 /* ===================== 商店邏輯 ===================== */
-function showShop() {
+let isMainMenuShop = false;
+
+function showShop(fromMainMenu = false) {
     gameRunning = false;
+    isMainMenuShop = fromMainMenu;
     shopModal.style.display = 'block';
+    if(isMainMenuShop) {
+        document.getElementById('startButton').style.display = 'none';
+        document.getElementById('mainShopButton').style.display = 'none';
+        closeShopBtn.textContent = "關閉商店";
+    } else {
+        closeShopBtn.textContent = "繼續前進";
+    }
     updateShopUI();
 }
 
 function updateShopUI() {
     shopCoinDisplay.textContent = `擁有金幣: ${coins}`;
-    btnHeal.disabled = coins < 50 || playerHealth >= player.maxHealth;
+    btnHeal.disabled = coins < 50 || playerHealth >= player.maxHealth || isMainMenuShop;
     btnDmg.disabled = coins < 100;
     btnMaxHp.disabled = coins < 150;
+    btnVehicle.disabled = coins < 500 || player.hasVehicle;
+    if (player.hasVehicle) btnVehicle.textContent = "機甲載具 (已解鎖 - 按 V 呼叫)";
 }
 
 btnHeal.addEventListener('click', () => {
     if (coins >= 50 && playerHealth < player.maxHealth) {
-        coins -= 50;
+        updatePersistentCoins(-50);
         playerHealth = player.maxHealth;
         playSound('pickup_health');
         updateShopUI();
         healthDisplay.textContent = `生命: ${Math.ceil(playerHealth)}`;
-        coinsDisplay.textContent = `金幣: ${coins}`;
     }
 });
 
 btnDmg.addEventListener('click', () => {
     if (coins >= 100) {
-        coins -= 100;
+        updatePersistentCoins(-100);
         player.damageMultiplier += 0.2;
         playSound('pickup_weapon');
         updateShopUI();
-        coinsDisplay.textContent = `金幣: ${coins}`;
     }
 });
 
 btnMaxHp.addEventListener('click', () => {
     if (coins >= 150) {
-        coins -= 150;
+        updatePersistentCoins(-150);
         player.maxHealth += 20;
         playerHealth += 20;
         playSound('pickup_health');
         updateShopUI();
         healthDisplay.textContent = `生命: ${Math.ceil(playerHealth)}`;
-        coinsDisplay.textContent = `金幣: ${coins}`;
+    }
+});
+
+btnVehicle.addEventListener('click', () => {
+    if (coins >= 500 && !player.hasVehicle) {
+        updatePersistentCoins(-500);
+        player.hasVehicle = true;
+        playSound('pickup_weapon');
+        updateShopUI();
     }
 });
 
 closeShopBtn.addEventListener('click', () => {
     shopModal.style.display = 'none';
+    if (isMainMenuShop) {
+        document.getElementById('startButton').style.display = 'block';
+        document.getElementById('mainShopButton').style.display = 'block';
+        // Redraw main menu
+        draw();
+        return;
+    }
+
     currentMajorStage++;
     nextBossSpawnX = player.worldX + BOSS_SPAWN_INTERVAL + Math.random() * 500;
     if (currentMajorStage == 3 || currentMajorStage == 5) collectibles.push(new Collectible(player.worldX + 100, player.worldY, 'weapon', 'egg_launcher'));
@@ -2003,17 +2208,24 @@ closeShopBtn.addEventListener('click', () => {
     gameLoop(); // Restart the game loop
 });
 
+document.getElementById('mainShopButton').addEventListener('click', () => {
+    showShop(true);
+});
+
 /* ===================== 介面畫面 ===================== */
 
 function displayStartScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white'; ctx.font = '30px "Courier New"'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'white'; ctx.font = '40px "Courier New"'; ctx.textAlign = 'center';
     ctx.fillText('戰鬥雞：無盡征途', canvas.width / 2, canvas.height / 2 - 60);
     ctx.font = '20px "Courier New"';
     ctx.fillText('準備好迎接真正的挑戰了嗎?', canvas.width / 2, canvas.height / 2 -10);
-    ctx.fillText('擊敗五大蔬菜魔王，成為雞界傳奇!', canvas.width / 2, canvas.height / 2 + 20);
-    ctx.fillText('按"開始遊戲"或 Enter/Space', canvas.width / 2, canvas.height / 2 + 60);
-    startButton.style.display = 'block';
+    ctx.fillText('擊敗蔬菜大軍，成為雞界傳奇!', canvas.width / 2, canvas.height / 2 + 20);
+
+    if (shopModal.style.display !== 'block') {
+        document.getElementById('startButton').style.display = 'block';
+        document.getElementById('mainShopButton').style.display = 'block';
+    }
 }
 function displayGameOverScreen() {
     if (bgmNode) { bgmNode.stop(); bgmNode = null; }
@@ -2030,14 +2242,18 @@ function displayGameOverScreen() {
     ctx.fillText(`最終分數: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
     ctx.fillText(`最高關卡: ${currentMajorStage > MAX_STAGES ? MAX_STAGES : currentMajorStage}`, canvas.width / 2, canvas.height / 2 + 50);
     ctx.fillText('點擊"重新開始"重新挑戰', canvas.width / 2, canvas.height / 2 + 90);
-    startButton.style.display = 'block'; startButton.textContent = "重新開始"; gameRunning = false;
+    if(shopModal.style.display !== 'block') {
+        document.getElementById('startButton').style.display = 'block';
+        document.getElementById('mainShopButton').style.display = 'block';
+    }
+    document.getElementById('startButton').textContent = "重新開始"; gameRunning = false;
 }
 
 /* ===================== 初始化 ===================== */
 function initGame() {
-    score = 0; coins = 0; currentMajorStage = 1; gameOver = false; gameWon = false;
+    score = 0; currentMajorStage = 1; gameOver = false; gameWon = false;
     player.maxHealth = 100; playerHealth = player.maxHealth; player.damageMultiplier = 1;
-    coinsDisplay.textContent = '金幣: 0'; shopModal.style.display = 'none';
+    coinsDisplay.textContent = `金幣: ${coins}`; shopModal.style.display = 'none';
     bossActive = false; activeBoss = null; cameraX = 0; worldGeneratedUpToX = 0;
     player.worldX = 100; player.worldY = canvas.height - PLAYER_HEIGHT - 100;
     player.dx = 0; player.dy = 0; player.grounded = false; player.bullets = []; player.facingRight = true;
@@ -2174,7 +2390,9 @@ startButton.addEventListener('click', async () => {
     initGame();
     playMusic(false);
     gameRunning = true; gameOver = false; gameWon = false;
-    startButton.style.display = 'none'; startButton.textContent = "開始遊戲";
+    document.getElementById('startButton').style.display = 'none';
+    document.getElementById('mainShopButton').style.display = 'none';
+    document.getElementById('startButton').textContent = "開始遊戲";
     gameLoop();
 });
 
