@@ -29,21 +29,36 @@
 
         #shopModal {
             display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #2c3e50, #34495e); border: 4px solid #f1c40f; border-radius: 15px;
-            padding: 30px; text-align: center; z-index: 100; box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            width: 400px;
+            background: linear-gradient(180deg, #1e272e, #2f3640); border: 3px solid #fbc531; border-radius: 20px;
+            padding: 0; text-align: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.9), inset 0 0 20px rgba(251, 197, 49, 0.2);
+            width: 480px; overflow: hidden; font-family: 'Courier New', Courier, monospace;
         }
-        #shopModal h2 { margin-top: 0; color: #f1c40f; text-shadow: 2px 2px 4px #000; font-size: 28px; }
+        .shop-header {
+            background: linear-gradient(135deg, #dcdde1, #f5f6fa); padding: 20px; color: #2f3640;
+            border-bottom: 3px solid #fbc531; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .shop-header h2 { margin: 0; color: #e1b12c; text-shadow: 1px 1px 0 #000; font-size: 30px; font-weight: 900; }
+        #shopCoinDisplay { font-size: 20px; color: #2f3640; margin-top: 10px; font-weight: bold; }
+        .shop-items { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .shop-btn {
-            display: block; width: 100%; margin: 15px 0; padding: 15px; font-size: 18px; font-weight: bold;
-            background-color: #e67e22; border: 2px solid #d35400; border-radius: 8px; color: white; cursor: pointer;
-            box-shadow: 0 4px 0 #d35400; transition: all 0.1s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; padding: 15px 10px; font-size: 16px; font-weight: bold;
+            background: linear-gradient(to bottom, #e1b12c, #fbc531); border: 2px solid #e1b12c; border-radius: 12px; color: #2f3640; cursor: pointer;
+            box-shadow: 0 6px 0 #c23616; transition: all 0.1s; text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
         }
-        .shop-btn:hover:not(:disabled) { background-color: #f39c12; transform: translateY(2px); box-shadow: 0 2px 0 #d35400; }
-        .shop-btn:disabled { background-color: #7f8c8d; border-color: #95a5a6; box-shadow: 0 4px 0 #95a5a6; cursor: not-allowed; color: #bdc3c7; }
-        #closeShopBtn { background-color: #3498db; border-color: #2980b9; box-shadow: 0 4px 0 #2980b9; margin-top: 25px; }
-        #closeShopBtn:hover { background-color: #2980b9; transform: translateY(2px); box-shadow: 0 2px 0 #2980b9; }
-        #shopCoinDisplay { font-size: 22px; color: #f1c40f; margin-bottom: 20px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        .shop-btn .icon { font-size: 32px; margin-bottom: 8px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
+        .shop-btn .name { font-size: 18px; margin-bottom: 5px; }
+        .shop-btn .price { font-size: 14px; background: rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 10px; }
+        .shop-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(2px); box-shadow: 0 4px 0 #c23616; }
+        .shop-btn:active:not(:disabled) { transform: translateY(6px); box-shadow: 0 0 0 #c23616; }
+        .shop-btn:disabled { background: #7f8fa6; border-color: #718093; box-shadow: 0 6px 0 #353b48; cursor: not-allowed; color: #dcdde1; filter: grayscale(100%); }
+        .shop-btn:disabled .price { background: rgba(0,0,0,0.2); }
+        .close-btn {
+            grid-column: 1 / -1; background: linear-gradient(to bottom, #00a8ff, #0097e6); border-color: #0097e6; box-shadow: 0 6px 0 #273c75;
+            color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.4); flex-direction: row; gap: 10px; font-size: 20px; padding: 18px;
+        }
+        .close-btn:hover:not(:disabled) { box-shadow: 0 4px 0 #273c75; }
+        .close-btn:active:not(:disabled) { box-shadow: 0 0 0 #273c75; }
 
         #resourceBarsContainer { display: flex; gap: 20px; justify-content: center; align-items: center; width: 100%; margin: 12px 0; }
         .resource-container { position: relative; width: 200px; height: 15px; background-color: #555; border: 1px solid #fff; border-radius: 3px; }
@@ -70,13 +85,40 @@
     </div>
 
     <div id="shopModal">
-        <h2>★ 神秘商店 ★</h2>
-        <div id="shopCoinDisplay">擁有金幣: 0</div>
-        <button id="btnHeal" class="shop-btn">恢復生命 (50 金幣)</button>
-        <button id="btnDmg" class="shop-btn">攻擊力 +20% (100 金幣)</button>
-        <button id="btnMaxHp" class="shop-btn">最大生命 +20 (150 金幣)</button>
-        <button id="btnVehicle" class="shop-btn">解鎖/呼叫 機甲載具 (500 金幣)</button>
-        <button id="closeShopBtn" class="shop-btn">繼續前進</button>
+        <div class="shop-header">
+            <h2>★ 神秘商店 ★</h2>
+            <div id="shopCoinDisplay">擁有金幣: 0</div>
+        </div>
+        <div class="shop-items">
+            <button id="btnHeal" class="shop-btn">
+                <span class="icon">❤️</span>
+                <span class="name">恢復生命</span>
+                <span class="price">50 金幣</span>
+            </button>
+            <button id="btnDmg" class="shop-btn">
+                <span class="icon">⚔️</span>
+                <span class="name">攻擊力 +20%</span>
+                <span class="price">100 金幣</span>
+            </button>
+            <button id="btnMaxHp" class="shop-btn">
+                <span class="icon">💚</span>
+                <span class="name">最大生命 +20</span>
+                <span class="price">150 金幣</span>
+            </button>
+            <button id="btnVehicle" class="shop-btn">
+                <span class="icon">🤖</span>
+                <span class="name" id="vehicleBtnName">解鎖機甲載具</span>
+                <span class="price">500 金幣</span>
+            </button>
+            <button id="btnAero" class="shop-btn">
+                <span class="icon">✈️</span>
+                <span class="name" id="aeroBtnName">解鎖飛行載具</span>
+                <span class="price">800 金幣</span>
+            </button>
+            <button id="closeShopBtn" class="shop-btn close-btn">
+                <span>繼續前進 ➔</span>
+            </button>
+        </div>
     </div>
 
     <div id="resourceBarsContainer">
@@ -158,6 +200,7 @@ const btnHeal = document.getElementById('btnHeal');
 const btnDmg = document.getElementById('btnDmg');
 const btnMaxHp = document.getElementById('btnMaxHp');
 const btnVehicle = document.getElementById('btnVehicle');
+const btnAero = document.getElementById('btnAero');
 const closeShopBtn = document.getElementById('closeShopBtn');
 
 let mouseX = 0;
@@ -408,7 +451,10 @@ function playSound(type, options = {}) {
 const WEAPON_TYPES = {
     'peck_cannon': { name: '小雞啄米槍', fireRate: 300, bulletSpeed: 8, bulletRadius: 5, bulletColor: '#FFFF00', damage: 10, pattern: 'single', ammo: Infinity },
     'feather_spread': { name: '羽毛散射砲', fireRate: 600, bulletSpeed: 7, bulletRadius: 4, bulletColor: '#ADD8E6', damage: 7, pattern: 'triple_spread', ammo: 50, maxAmmo: 50 },
-    'egg_launcher': { name: '爆蛋發射器', fireRate: 1000, bulletSpeed: 6, bulletRadius: 8, bulletColor: '#FFA07A', damage: 25, pattern: 'single_big', ammo: 20, maxAmmo: 20 }
+    'egg_launcher': { name: '爆蛋發射器', fireRate: 1000, bulletSpeed: 6, bulletRadius: 8, bulletColor: '#FFA07A', damage: 25, pattern: 'single_big', ammo: 20, maxAmmo: 20 },
+    'laser_beam': { name: '光束雞光槍', fireRate: 200, bulletSpeed: 15, bulletRadius: 3, bulletColor: '#00FFFF', damage: 8, pattern: 'pierce', ammo: 100, maxAmmo: 100 },
+    'bouncing_seed': { name: '跳跳種子', fireRate: 400, bulletSpeed: 7, bulletRadius: 6, bulletColor: '#2ECC71', damage: 15, pattern: 'bounce', ammo: 60, maxAmmo: 60 },
+    'homing_missile': { name: '追蹤導彈', fireRate: 800, bulletSpeed: 5, bulletRadius: 7, bulletColor: '#E74C3C', damage: 18, pattern: 'homing', ammo: 30, maxAmmo: 30 }
 };
 const SKILL_COOLDOWN = 12000;
 let skillReady = true; let lastSkillTime = 0;
@@ -443,6 +489,9 @@ const player = {
     lastShotTime: 0,
     P_feather_spread_ammo: 0,
     P_egg_launcher_ammo: 0,
+    P_laser_beam_ammo: 0,
+    P_bouncing_seed_ammo: 0,
+    P_homing_missile_ammo: 0,
     invincible: false,
     invincibleTimer: 0,
     jumps: 2,
@@ -460,6 +509,7 @@ const player = {
     isDashing: false,
     hasVehicle: false,
     inVehicle: false,
+    vehicleType: null, // 'mech' or 'aero'
     vehicleHp: 200,
     vehicleMaxHp: 200,
     vehicleSummoning: false,
@@ -500,6 +550,9 @@ const player = {
         let currentAmmoForWeapon = Infinity;
         if (currentWeaponKey === 'feather_spread') currentAmmoForWeapon = this.P_feather_spread_ammo;
         else if (currentWeaponKey === 'egg_launcher') currentAmmoForWeapon = this.P_egg_launcher_ammo;
+        else if (currentWeaponKey === 'laser_beam') currentAmmoForWeapon = this.P_laser_beam_ammo;
+        else if (currentWeaponKey === 'bouncing_seed') currentAmmoForWeapon = this.P_bouncing_seed_ammo;
+        else if (currentWeaponKey === 'homing_missile') currentAmmoForWeapon = this.P_homing_missile_ammo;
         if (weaponStats.ammo !== Infinity && currentAmmoForWeapon <= 0) {
             messageDisplay.textContent = `${weaponStats.name} 沒子彈了!`;
             setTimeout(()=> messageDisplay.textContent = "", 1500);
@@ -525,15 +578,37 @@ const player = {
 
             muzzleFlashes.push({ x: muzzleX, y: muzzleY, alpha: 1 });
 
-            // Mech shoots powerful explosive rounds
-            this.bullets.push({
-                worldX: muzzleX, worldY: muzzleY,
-                radius: 12, color: '#f1c40f',
-                speedX: Math.cos(angle) * 12,
-                speedY: Math.sin(angle) * 12,
-                damage: 40 * this.damageMultiplier,
-                isExplosive: true
-            });
+            if (this.vehicleType === 'mech') {
+                // Mech shoots powerful explosive rounds
+                this.bullets.push({
+                    worldX: muzzleX, worldY: muzzleY,
+                    radius: 12, color: '#f1c40f',
+                    speedX: Math.cos(angle) * 12,
+                    speedY: Math.sin(angle) * 12,
+                    damage: 40 * this.damageMultiplier,
+                    isExplosive: true
+                });
+            } else if (this.vehicleType === 'aero') {
+                // Aero Fighter shoots twin fast piercing lasers
+                this.bullets.push({
+                    worldX: muzzleX, worldY: muzzleY - 10,
+                    radius: 4, color: '#00FFFF',
+                    speedX: Math.cos(angle) * 18,
+                    speedY: Math.sin(angle) * 18,
+                    damage: 15 * this.damageMultiplier,
+                    pattern: 'pierce', hitTargets: new Set(),
+                    lifetime: 80
+                });
+                this.bullets.push({
+                    worldX: muzzleX, worldY: muzzleY + 10,
+                    radius: 4, color: '#00FFFF',
+                    speedX: Math.cos(angle) * 18,
+                    speedY: Math.sin(angle) * 18,
+                    damage: 15 * this.damageMultiplier,
+                    pattern: 'pierce', hitTargets: new Set(),
+                    lifetime: 80
+                });
+            }
             return; // Skip normal weapon logic
         }
 
@@ -578,10 +653,41 @@ const player = {
                     damage: weaponStats.damage * this.damageMultiplier
                 });
             });
+        } else if (weaponStats.pattern === 'pierce') {
+            this.bullets.push({
+                worldX: muzzleX, worldY: muzzleY,
+                radius: weaponStats.bulletRadius, color: weaponStats.bulletColor,
+                speedX: Math.cos(angle) * weaponStats.bulletSpeed,
+                speedY: Math.sin(angle) * weaponStats.bulletSpeed,
+                damage: weaponStats.damage * this.damageMultiplier,
+                piercing: true
+            });
+        } else if (weaponStats.pattern === 'bounce') {
+            this.bullets.push({
+                worldX: muzzleX, worldY: muzzleY,
+                radius: weaponStats.bulletRadius, color: weaponStats.bulletColor,
+                speedX: Math.cos(angle) * weaponStats.bulletSpeed,
+                speedY: Math.sin(angle) * weaponStats.bulletSpeed,
+                damage: weaponStats.damage * this.damageMultiplier,
+                bouncing: true, bouncesLeft: 3
+            });
+        } else if (weaponStats.pattern === 'homing') {
+            this.bullets.push({
+                worldX: muzzleX, worldY: muzzleY,
+                radius: weaponStats.bulletRadius, color: weaponStats.bulletColor,
+                speedX: Math.cos(angle) * weaponStats.bulletSpeed,
+                speedY: Math.sin(angle) * weaponStats.bulletSpeed,
+                damage: weaponStats.damage * this.damageMultiplier,
+                homingToEnemy: true, lifetime: 120
+            });
         }
+
         if (weaponStats.ammo !== Infinity) {
             if (currentWeaponKey === 'feather_spread') this.P_feather_spread_ammo--;
             else if (currentWeaponKey === 'egg_launcher') this.P_egg_launcher_ammo--;
+            else if (currentWeaponKey === 'laser_beam') this.P_laser_beam_ammo--;
+            else if (currentWeaponKey === 'bouncing_seed') this.P_bouncing_seed_ammo--;
+            else if (currentWeaponKey === 'homing_missile') this.P_homing_missile_ammo--;
         }
         this.updateWeaponUI();
     },
@@ -660,6 +766,9 @@ const player = {
             let currentAmmoForDisplay = 0;
             if (currentWeaponKey === 'feather_spread') currentAmmoForDisplay = this.P_feather_spread_ammo;
             else if (currentWeaponKey === 'egg_launcher') currentAmmoForDisplay = this.P_egg_launcher_ammo;
+            else if (currentWeaponKey === 'laser_beam') currentAmmoForDisplay = this.P_laser_beam_ammo;
+            else if (currentWeaponKey === 'bouncing_seed') currentAmmoForDisplay = this.P_bouncing_seed_ammo;
+            else if (currentWeaponKey === 'homing_missile') currentAmmoForDisplay = this.P_homing_missile_ammo;
             ammoText = ` (${currentAmmoForDisplay}/${weaponStats.maxAmmo})`;
         }
         weaponDisplay.textContent = `武器: ${weaponStats.name}${ammoText}`;
@@ -670,6 +779,9 @@ const player = {
             if (WEAPON_TYPES[weaponKey].ammo !== Infinity) {
                 if(weaponKey === 'feather_spread') this.P_feather_spread_ammo = WEAPON_TYPES[weaponKey].maxAmmo;
                 else if(weaponKey === 'egg_launcher') this.P_egg_launcher_ammo = WEAPON_TYPES[weaponKey].maxAmmo;
+                else if(weaponKey === 'laser_beam') this.P_laser_beam_ammo = WEAPON_TYPES[weaponKey].maxAmmo;
+                else if(weaponKey === 'bouncing_seed') this.P_bouncing_seed_ammo = WEAPON_TYPES[weaponKey].maxAmmo;
+                else if(weaponKey === 'homing_missile') this.P_homing_missile_ammo = WEAPON_TYPES[weaponKey].maxAmmo;
             }
             messageDisplay.textContent = `獲得新武器: ${WEAPON_TYPES[weaponKey].name}!`;
             playSound('pickup_weapon');
@@ -677,6 +789,9 @@ const player = {
             if (WEAPON_TYPES[weaponKey].ammo !== Infinity) {
                 if(weaponKey === 'feather_spread') this.P_feather_spread_ammo = Math.min(this.P_feather_spread_ammo + WEAPON_TYPES[weaponKey].maxAmmo, WEAPON_TYPES[weaponKey].maxAmmo);
                 else if(weaponKey === 'egg_launcher') this.P_egg_launcher_ammo = Math.min(this.P_egg_launcher_ammo + WEAPON_TYPES[weaponKey].maxAmmo, WEAPON_TYPES[weaponKey].maxAmmo);
+                else if(weaponKey === 'laser_beam') this.P_laser_beam_ammo = Math.min(this.P_laser_beam_ammo + WEAPON_TYPES[weaponKey].maxAmmo, WEAPON_TYPES[weaponKey].maxAmmo);
+                else if(weaponKey === 'bouncing_seed') this.P_bouncing_seed_ammo = Math.min(this.P_bouncing_seed_ammo + WEAPON_TYPES[weaponKey].maxAmmo, WEAPON_TYPES[weaponKey].maxAmmo);
+                else if(weaponKey === 'homing_missile') this.P_homing_missile_ammo = Math.min(this.P_homing_missile_ammo + WEAPON_TYPES[weaponKey].maxAmmo, WEAPON_TYPES[weaponKey].maxAmmo);
                 messageDisplay.textContent = `${WEAPON_TYPES[weaponKey].name} 彈藥已補充!`;
                 playSound('pickup_health');
             }
@@ -711,22 +826,51 @@ const player = {
             ctx.translate(screenX + this.width/2, this.worldY + this.height/2);
             ctx.scale(this.facingRight ? 1 : -1, 1);
 
-            // Draw Mech
-            ctx.fillStyle = '#7f8c8d'; // Body
-            ctx.fillRect(-25, -25, 50, 50);
-            ctx.fillStyle = '#2c3e50'; // Cockpit
-            ctx.fillRect(-15, -15, 30, 20);
-            ctx.fillStyle = '#f1c40f'; // Player eye inside
-            ctx.fillRect(-5, -10, 5, 5);
-            ctx.fillStyle = '#bdc3c7'; // Legs
-            ctx.fillRect(-20, 25, 10, 15);
-            ctx.fillRect(10, 25, 10, 15);
+            if (this.vehicleType === 'mech') {
+                // Draw Mech
+                ctx.fillStyle = '#7f8c8d'; // Body
+                ctx.fillRect(-25, -25, 50, 50);
+                ctx.fillStyle = '#2c3e50'; // Cockpit
+                ctx.fillRect(-15, -15, 30, 20);
+                ctx.fillStyle = '#f1c40f'; // Player eye inside
+                ctx.fillRect(-5, -10, 5, 5);
+                ctx.fillStyle = '#bdc3c7'; // Legs
+                ctx.fillRect(-20, 25, 10, 15);
+                ctx.fillRect(10, 25, 10, 15);
 
-            // Giant Cannon
-            ctx.fillStyle = '#34495e';
-            ctx.fillRect(10, 0, 40, 15);
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(45, 2, 8, 11);
+                // Giant Cannon
+                ctx.fillStyle = '#34495e';
+                ctx.fillRect(10, 0, 40, 15);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(45, 2, 8, 11);
+            } else if (this.vehicleType === 'aero') {
+                // Draw Aero Fighter
+                ctx.fillStyle = '#ecf0f1'; // Fuselage
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 35, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#3498db'; // Cockpit glass
+                ctx.beginPath();
+                ctx.arc(10, -5, 10, Math.PI, 0);
+                ctx.fill();
+                ctx.fillStyle = '#e74c3c'; // Wings
+                ctx.beginPath();
+                ctx.moveTo(-10, 0);
+                ctx.lineTo(-25, -25);
+                ctx.lineTo(10, 0);
+                ctx.fill();
+                ctx.fillStyle = '#f39c12'; // Thruster flame
+                if (Math.random() > 0.5) {
+                    ctx.beginPath();
+                    ctx.moveTo(-35, 0);
+                    ctx.lineTo(-50, -5);
+                    ctx.lineTo(-45, 5);
+                    ctx.fill();
+                }
+                // Machine Gun
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(20, 5, 20, 5);
+            }
 
             ctx.restore();
 
@@ -848,9 +992,13 @@ const player = {
                 triggerScreenShake(15, 500);
                 playSound('particle_burst', {volume: 0.5});
                 createParticles(this.worldX + this.width/2, this.worldY + this.height, 50, '#7f8c8d', 8);
-                messageDisplay.textContent = "機甲已部署！";
+                if (this.vehicleType === 'mech') {
+                    messageDisplay.textContent = "機甲已部署！";
+                } else if (this.vehicleType === 'aero') {
+                    messageDisplay.textContent = "飛行載具已部署！";
+                }
                 setTimeout(() => messageDisplay.textContent = "", 2000);
-                healthDisplay.textContent = `機甲: ${this.vehicleHp}`;
+                healthDisplay.textContent = `載具: ${this.vehicleHp}`;
             }
             return; // Freeze player while summoning
         }
@@ -881,7 +1029,12 @@ const player = {
         if (!this.isDashing) {
             if (this.dx > 0) this.facingRight = true;
             if (this.dx < 0) this.facingRight = false;
-            this.dy += GRAVITY;
+            if (this.inVehicle && this.vehicleType === 'aero') {
+                // Ignore gravity when in Aero, apply vertical velocity
+                this.dy *= 0.8; // Dampen vertical movement slightly
+            } else {
+                this.dy += GRAVITY;
+            }
         }
         this.worldY += this.dy;
 
@@ -903,6 +1056,58 @@ const player = {
         if (this.worldX < 0) this.worldX = 0;
 
         this.bullets.forEach((bullet, index) => {
+            if(bullet.homingToEnemy && bullet.lifetime > 0) {
+                let closestEnemy = null;
+                let minDistance = 300; // Tracking range
+                let allTargets = enemies.concat(activeBoss ? [activeBoss] : []);
+                allTargets.forEach(enemy => {
+                    const dx = (enemy.worldX + enemy.width / 2) - bullet.worldX;
+                    const dy = (enemy.worldY + enemy.height / 2) - bullet.worldY;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    if(distance < minDistance) {
+                        minDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                });
+                if(closestEnemy) {
+                    const angle = Math.atan2((closestEnemy.worldY + closestEnemy.height/2) - bullet.worldY, (closestEnemy.worldX + closestEnemy.width/2) - bullet.worldX);
+                    bullet.speedX += Math.cos(angle) * 0.5;
+                    bullet.speedY += Math.sin(angle) * 0.5;
+                    const speed = Math.sqrt(bullet.speedX**2 + bullet.speedY**2);
+                    if(speed > WEAPON_TYPES['homing_missile'].bulletSpeed * 1.5){
+                        bullet.speedX = (bullet.speedX / speed) * WEAPON_TYPES['homing_missile'].bulletSpeed * 1.5;
+                        bullet.speedY = (bullet.speedY / speed) * WEAPON_TYPES['homing_missile'].bulletSpeed * 1.5;
+                    }
+                }
+                bullet.lifetime--;
+            }
+
+            if (bullet.bouncing) {
+                bullet.speedY += GRAVITY * 0.5; // Bouncing seeds are affected by gravity
+                platforms.forEach(p => {
+                    if (bullet.worldX + bullet.radius > p.worldX && bullet.worldX - bullet.radius < p.worldX + p.width &&
+                        bullet.worldY + bullet.radius >= p.worldY && bullet.worldY - bullet.radius <= p.worldY + p.height) {
+
+                        // Simple bounce from top
+                        if (bullet.speedY > 0 && bullet.worldY < p.worldY) {
+                            bullet.worldY = p.worldY - bullet.radius;
+                            bullet.speedY = -bullet.speedY * 0.8;
+                            bullet.bouncesLeft--;
+                            if(bullet.bouncesLeft <= 0) {
+                                this.bullets.splice(index, 1);
+                            }
+                        } else {
+                            // Hit side
+                            bullet.speedX = -bullet.speedX * 0.8;
+                            bullet.bouncesLeft--;
+                            if(bullet.bouncesLeft <= 0) {
+                                this.bullets.splice(index, 1);
+                            }
+                        }
+                    }
+                });
+            }
+
             bullet.worldX += bullet.speedX; bullet.worldY += bullet.speedY;
             if (bullet.worldX < cameraX - 50 || bullet.worldX > cameraX + canvas.width + 50 || bullet.worldY < -50 || bullet.worldY > canvas.height + 50) {
                 this.bullets.splice(index, 1);
@@ -1589,7 +1794,7 @@ function generateSegment(startX) {
             }
         }
         if (!bossActive && Math.random() < 0.04) {
-            const weaponKeys = ['feather_spread', 'egg_launcher'];
+            const weaponKeys = ['feather_spread', 'egg_launcher', 'laser_beam', 'bouncing_seed', 'homing_missile'];
             const randomWeaponKey = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
             collectibles.push(new Collectible(currentX + platformWidth / 2, newPlatformY - 30, 'weapon', randomWeaponKey));
         }
@@ -1642,11 +1847,22 @@ function activateDevMode() {
     player.maxHealth = 9999;
     player.addWeapon('feather_spread');
     player.addWeapon('egg_launcher');
+    player.addWeapon('laser_beam');
+    player.addWeapon('bouncing_seed');
+    player.addWeapon('homing_missile');
     player.P_feather_spread_ammo = Infinity;
     player.P_egg_launcher_ammo = Infinity;
+    player.P_laser_beam_ammo = Infinity;
+    player.P_bouncing_seed_ammo = Infinity;
+    player.P_homing_missile_ammo = Infinity;
     WEAPON_TYPES['feather_spread'].ammo = Infinity;
     WEAPON_TYPES['egg_launcher'].ammo = Infinity;
+    WEAPON_TYPES['laser_beam'].ammo = Infinity;
+    WEAPON_TYPES['bouncing_seed'].ammo = Infinity;
+    WEAPON_TYPES['homing_missile'].ammo = Infinity;
     player.grit = player.maxGrit;
+    player.hasVehicle = true;
+    player.vehicleType = 'aero';
     messageDisplay.textContent = "開發者模式已啟動！";
     playSound('pet_summon');
     createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 100, '#FFD700', 10);
@@ -1660,19 +1876,40 @@ document.addEventListener('keydown', (e) => {
     if (!gameRunning && shopModal.style.display !== 'block' && (e.code === 'Enter' || e.code === 'Space')) { startButton.click(); return; }
     if (!gameRunning || gameOver) return;
 
-    if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); player.jump(); }
+    if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        if (!player.inVehicle || player.vehicleType !== 'aero') {
+            player.jump();
+        }
+    }
     if (e.code === 'Space') player.shoot();
-    if (e.code === 'KeyS') player.useSkill();
+    if (e.code === 'KeyS' && (!player.inVehicle || player.vehicleType !== 'aero')) player.useSkill();
     if (e.code === 'KeyQ' || e.code === 'KeyE') player.switchWeapon();
     if (e.code === 'KeyF') player.healWithGrit();
     if (e.code === 'KeyP') player.summonPet();
-    if (e.code === 'KeyV' && player.hasVehicle && !player.inVehicle && !player.vehicleSummoning) {
-        player.vehicleSummoning = true;
-        player.vehicleSummonTimer = 0;
-        player.vehicleSummonY = -100;
-        player.dx = 0; player.dy = 0;
-        playSound('skill_use'); // Use skill sound for incoming
+
+    // Vehicle summon / eject
+    if (e.code === 'KeyV' && player.hasVehicle) {
+        if (player.inVehicle) {
+            // Eject
+            player.inVehicle = false;
+            player.hasVehicle = false;
+            player.vehicleType = null;
+            createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 30, '#7f8c8d', 5, false);
+            player.dy = -15; // Bounce up when exiting
+            messageDisplay.textContent = "已離開載具！";
+            setTimeout(() => messageDisplay.textContent = "", 2000);
+            healthDisplay.textContent = `生命: ${Math.ceil(playerHealth)}`;
+        } else if (!player.vehicleSummoning) {
+            // Summon
+            player.vehicleSummoning = true;
+            player.vehicleSummonTimer = 0;
+            player.vehicleSummonY = player.worldY - 200;
+            player.dx = 0; player.dy = 0;
+            playSound('skill_use');
+        }
     }
+
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         if (!player.isDashing && player.dashCooldown <= 0 && gameRunning && !gameOver) {
             player.isDashing = true;
@@ -1687,8 +1924,18 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => { keys[e.code] = false; });
 function handleInput() {
     if (!gameRunning || gameOver) return; player.dx = 0;
-    if (keys['ArrowLeft'] || keys['KeyA']) player.dx = -PLAYER_SPEED;
-    if (keys['ArrowRight'] || keys['KeyD']) player.dx = PLAYER_SPEED;
+
+    let speed = PLAYER_SPEED;
+    if (player.inVehicle && player.vehicleType === 'aero') speed = PLAYER_SPEED * 1.5;
+
+    if (keys['ArrowLeft'] || keys['KeyA']) player.dx = -speed;
+    if (keys['ArrowRight'] || keys['KeyD']) player.dx = speed;
+
+    if (player.inVehicle && player.vehicleType === 'aero') {
+        if (keys['ArrowUp'] || keys['KeyW']) player.dy = -speed;
+        if (keys['ArrowDown'] || keys['KeyS']) player.dy = speed;
+    }
+
     if (isMouseDown || keys['Space']) player.shoot(); // Allow both space and left mouse hold
 }
 
@@ -1716,7 +1963,15 @@ function checkCollisions() {
                 bullet.worldX + bullet.radius > target.worldX &&
                 bullet.worldY - bullet.radius < target.worldY + target.height &&
                 bullet.worldY + bullet.radius > target.worldY) {
-                player.bullets.splice(bulletIndex, 1);
+
+                if (bullet.piercing) {
+                    if (!bullet.hitTargets) bullet.hitTargets = new Set();
+                    if (bullet.hitTargets.has(target)) return;
+                    bullet.hitTargets.add(target);
+                } else {
+                    player.bullets.splice(bulletIndex, 1);
+                }
+
                 target.health -= bullet.damage;
 
                 if(player.grit < player.maxGrit) {
@@ -1738,6 +1993,8 @@ function checkCollisions() {
                         messageDisplay.textContent = `第 ${currentMajorStage} 關魔王已被擊敗!`;
                         setTimeout(()=> messageDisplay.textContent = "", 3000);
                         playerHealth = Math.min(player.maxHealth, playerHealth + 50);
+
+                        nextBossSpawnX = Infinity; // Prevent immediate respawn
 
                         if (currentMajorStage >= MAX_STAGES) {
                             gameWon = true;
@@ -2187,9 +2444,9 @@ function showShop(fromMainMenu = false) {
     if(isMainMenuShop) {
         document.getElementById('startButton').style.display = 'none';
         document.getElementById('mainShopButton').style.display = 'none';
-        closeShopBtn.textContent = "關閉商店";
+        closeShopBtn.querySelector('span').textContent = "關閉商店 ➔";
     } else {
-        closeShopBtn.textContent = "繼續前進";
+        closeShopBtn.querySelector('span').textContent = "繼續前進 ➔";
     }
     updateShopUI();
 }
@@ -2200,7 +2457,14 @@ function updateShopUI() {
     btnDmg.disabled = coins < 100;
     btnMaxHp.disabled = coins < 150;
     btnVehicle.disabled = coins < 500 || player.hasVehicle;
-    if (player.hasVehicle) btnVehicle.textContent = "機甲載具 (已解鎖 - 按 V 呼叫)";
+    btnAero.disabled = coins < 800 || player.hasVehicle;
+    if (player.hasVehicle) {
+        document.getElementById('vehicleBtnName').textContent = player.vehicleType === 'mech' ? "已解鎖 (按 V 呼叫)" : "互斥";
+        document.getElementById('aeroBtnName').textContent = player.vehicleType === 'aero' ? "已解鎖 (按 V 呼叫)" : "互斥";
+    } else {
+        document.getElementById('vehicleBtnName').textContent = "解鎖機甲載具";
+        document.getElementById('aeroBtnName').textContent = "解鎖飛行載具";
+    }
 }
 
 btnHeal.addEventListener('click', () => {
@@ -2237,6 +2501,17 @@ btnVehicle.addEventListener('click', () => {
     if (coins >= 500 && !player.hasVehicle) {
         updatePersistentCoins(-500);
         player.hasVehicle = true;
+        player.vehicleType = 'mech';
+        playSound('pickup_weapon');
+        updateShopUI();
+    }
+});
+
+btnAero.addEventListener('click', () => {
+    if (coins >= 800 && !player.hasVehicle) {
+        updatePersistentCoins(-800);
+        player.hasVehicle = true;
+        player.vehicleType = 'aero';
         playSound('pickup_weapon');
         updateShopUI();
     }
