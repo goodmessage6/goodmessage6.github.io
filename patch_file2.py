@@ -1,75 +1,50 @@
 import re
 
-with open('update.html', 'r', encoding='utf-8') as f:
+file_path = "update.html"
+with open(file_path, "r", encoding="utf-8") as f:
     content = f.read()
 
-# Add coin elements and coin variable
-js_init_search = """const gritBar = document.getElementById('gritBar');
-const gritText = document.getElementById('gritText');
-const petSummonBar = document.getElementById('petSummonBar');
-const petSummonText = document.getElementById('petSummonText');
+# Add logic for developer mode sequence tracking
+dev_mode_code = """
+/* ===================== 開發者模式 ===================== */
+const devSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+let devSequenceIndex = 0;
 
-let score = 0;
-let currentMajorStage = 1;"""
+function checkDevSequence(code) {
+    if (code === devSequence[devSequenceIndex]) {
+        devSequenceIndex++;
+        if (devSequenceIndex === devSequence.length) {
+            activateDevMode();
+            devSequenceIndex = 0; // Reset after activation
+        }
+    } else {
+        devSequenceIndex = 0; // Reset if sequence broken
+        if (code === devSequence[0]) {
+            devSequenceIndex = 1; // Restart sequence if it starts again
+        }
+    }
+}
 
-js_init_replace = """const gritBar = document.getElementById('gritBar');
-const gritText = document.getElementById('gritText');
-const petSummonBar = document.getElementById('petSummonBar');
-const petSummonText = document.getElementById('petSummonText');
-const coinsDisplay = document.getElementById('coinsDisplay');
-const shopModal = document.getElementById('shopModal');
-const shopCoinDisplay = document.getElementById('shopCoinDisplay');
-const btnHeal = document.getElementById('btnHeal');
-const btnDmg = document.getElementById('btnDmg');
-const btnMaxHp = document.getElementById('btnMaxHp');
-const closeShopBtn = document.getElementById('closeShopBtn');
+function activateDevMode() {
+    updatePersistentCoins(9999);
+    playerHealth = 9999;
+    player.maxHealth = 9999;
+    player.addWeapon('feather_spread');
+    player.addWeapon('egg_launcher');
+    player.P_feather_spread_ammo = Infinity;
+    player.P_egg_launcher_ammo = Infinity;
+    WEAPON_TYPES['feather_spread'].ammo = Infinity;
+    WEAPON_TYPES['egg_launcher'].ammo = Infinity;
+    player.grit = player.maxGrit;
+    messageDisplay.textContent = "開發者模式已啟動！";
+    playSound('pet_summon');
+    createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 100, '#FFD700', 10);
+    setTimeout(() => messageDisplay.textContent = "", 3000);
+}
+"""
 
-let score = 0;
-let coins = 0;
-let currentMajorStage = 1;"""
+# Insert developer mode variables before the keydown listener
+content = re.sub(r'const keys = \{\};\ndocument.addEventListener\(\'keydown\', \(e\) => \{', dev_mode_code + '\nconst keys = {};\ndocument.addEventListener(\'keydown\', (e) => {\n    checkDevSequence(e.code);', content)
 
-content = content.replace(js_init_search, js_init_replace)
-
-# Add player properties
-player_search = """    worldX: 100, worldY: canvas.height - PLAYER_HEIGHT - 100,
-    width: PLAYER_WIDTH, height: PLAYER_HEIGHT,
-    dx: 0, dy: 0, grounded: false, facingRight: true,
-    color: '#FFD700', bullets: [],
-    weapons: ['peck_cannon'],
-    currentWeaponIndex: 0,
-    lastShotTime: 0,
-    P_feather_spread_ammo: 0,
-    P_egg_launcher_ammo: 0,
-    invincible: false,
-    invincibleTimer: 0,
-    jumps: 2,
-    maxJumps: 2,
-    isDoubleJumping: false,
-    grit: 0,
-    maxGrit: 250,
-    healAmount: 15,"""
-
-player_replace = """    worldX: 100, worldY: canvas.height - PLAYER_HEIGHT - 100,
-    width: PLAYER_WIDTH, height: PLAYER_HEIGHT,
-    dx: 0, dy: 0, grounded: false, facingRight: true,
-    color: '#FFD700', bullets: [],
-    weapons: ['peck_cannon'],
-    currentWeaponIndex: 0,
-    lastShotTime: 0,
-    P_feather_spread_ammo: 0,
-    P_egg_launcher_ammo: 0,
-    invincible: false,
-    invincibleTimer: 0,
-    jumps: 2,
-    maxJumps: 2,
-    isDoubleJumping: false,
-    grit: 0,
-    maxGrit: 250,
-    healAmount: 15,
-    maxHealth: 100,
-    damageMultiplier: 1.0,"""
-
-content = content.replace(player_search, player_replace)
-
-with open('update.html', 'w', encoding='utf-8') as f:
+with open(file_path, "w", encoding="utf-8") as f:
     f.write(content)
