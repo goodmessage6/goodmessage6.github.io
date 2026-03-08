@@ -108,12 +108,17 @@
             <button id="btnVehicle" class="shop-btn">
                 <span class="icon">🤖</span>
                 <span class="name" id="vehicleBtnName">解鎖機甲載具</span>
-                <span class="price">500 金幣</span>
+                <span class="price">150 金幣</span>
             </button>
             <button id="btnAero" class="shop-btn">
                 <span class="icon">✈️</span>
-                <span class="name" id="aeroBtnName">解鎖飛行載具</span>
-                <span class="price">800 金幣</span>
+                <span class="name" id="aeroBtnName">解鎖飛行戰機</span>
+                <span class="price">200 金幣</span>
+            </button>
+            <button id="btnUfo" class="shop-btn" style="grid-column: 1 / -1;">
+                <span class="icon">🛸</span>
+                <span class="name" id="ufoBtnName">解鎖等離子幽浮</span>
+                <span class="price">250 金幣</span>
             </button>
             <button id="closeShopBtn" class="shop-btn close-btn">
                 <span>繼續前進 ➔</span>
@@ -137,7 +142,7 @@
         <div id="damageOverlay"></div>
     </div>
     <div id="controlsInfo">
-        ← →/A D: 移動 | ↑/W: 跳躍 | 空白鍵: 射擊 | S: 技能 | Q/E: 切換武器 | F: 消耗鬥志回血 | P: 召喚寵物
+        A D: 移動 | W: 跳躍 | 滑鼠: 瞄準 | 左鍵/空白鍵: 射擊(可按住) | S: 技能 | Q/E: 切換武器 | V: 載具 | F: 回血 | P: 寵物
     </div>
     <div style="display: flex; gap: 20px;">
         <button id="startButton" class="button">開始遊戲</button>
@@ -201,6 +206,7 @@ const btnDmg = document.getElementById('btnDmg');
 const btnMaxHp = document.getElementById('btnMaxHp');
 const btnVehicle = document.getElementById('btnVehicle');
 const btnAero = document.getElementById('btnAero');
+const btnUfo = document.getElementById('btnUfo');
 const closeShopBtn = document.getElementById('closeShopBtn');
 
 let mouseX = 0;
@@ -608,6 +614,20 @@ const player = {
                     pattern: 'pierce', hitTargets: new Set(),
                     lifetime: 80
                 });
+            } else if (this.vehicleType === 'ufo') {
+                // UFO shoots 3 plasma balls in a spread pattern
+                const spreadAngles = [-0.15, 0, 0.15];
+                spreadAngles.forEach(spread => {
+                    const finalAngle = angle + spread;
+                    this.bullets.push({
+                        worldX: muzzleX, worldY: muzzleY,
+                        radius: 6, color: '#9b59b6',
+                        speedX: Math.cos(finalAngle) * 10,
+                        speedY: Math.sin(finalAngle) * 10,
+                        damage: 20 * this.damageMultiplier,
+                        bouncing: true, bouncesLeft: 2
+                    });
+                });
             }
             return; // Skip normal weapon logic
         }
@@ -870,6 +890,47 @@ const player = {
                 // Machine Gun
                 ctx.fillStyle = '#2c3e50';
                 ctx.fillRect(20, 5, 20, 5);
+            } else if (this.vehicleType === 'ufo') {
+                // Draw UFO
+                ctx.fillStyle = 'rgba(155, 89, 182, 0.4)'; // Glass dome
+                ctx.beginPath();
+                ctx.arc(0, -5, 20, Math.PI, 0);
+                ctx.fill();
+
+                ctx.fillStyle = '#2c3e50'; // Main saucer body
+                ctx.beginPath();
+                ctx.ellipse(0, 5, 35, 12, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Flashing lights around the saucer
+                const time = Date.now();
+                const colors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db'];
+                for (let i = -2; i <= 2; i++) {
+                    const lightX = i * 12;
+                    ctx.fillStyle = (Math.floor(time / 150) % 5 === i + 2) ? colors[Math.abs(i) % 4] : '#7f8c8d';
+                    ctx.beginPath();
+                    ctx.arc(lightX, 5, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Bottom thruster
+                ctx.fillStyle = '#8e44ad';
+                ctx.beginPath();
+                ctx.moveTo(-10, 15);
+                ctx.lineTo(10, 15);
+                ctx.lineTo(0, 25);
+                ctx.fill();
+
+                // Energy beam below UFO occasionally
+                if (Math.random() > 0.7) {
+                    ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(-5, 20);
+                    ctx.lineTo(5, 20);
+                    ctx.lineTo(15, 50);
+                    ctx.lineTo(-15, 50);
+                    ctx.fill();
+                }
             }
 
             ctx.restore();
@@ -996,6 +1057,8 @@ const player = {
                     messageDisplay.textContent = "機甲已部署！";
                 } else if (this.vehicleType === 'aero') {
                     messageDisplay.textContent = "飛行載具已部署！";
+                } else if (this.vehicleType === 'ufo') {
+                    messageDisplay.textContent = "等離子幽浮已部署！";
                 }
                 setTimeout(() => messageDisplay.textContent = "", 2000);
                 healthDisplay.textContent = `載具: ${this.vehicleHp}`;
@@ -1029,8 +1092,8 @@ const player = {
         if (!this.isDashing) {
             if (this.dx > 0) this.facingRight = true;
             if (this.dx < 0) this.facingRight = false;
-            if (this.inVehicle && this.vehicleType === 'aero') {
-                // Ignore gravity when in Aero, apply vertical velocity
+            if (this.inVehicle && (this.vehicleType === 'aero' || this.vehicleType === 'ufo')) {
+                // Ignore gravity when in flying vehicles, apply vertical velocity
                 this.dy *= 0.8; // Dampen vertical movement slightly
             } else {
                 this.dy += GRAVITY;
@@ -1878,12 +1941,12 @@ document.addEventListener('keydown', (e) => {
 
     if (e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
-        if (!player.inVehicle || player.vehicleType !== 'aero') {
+        if (!player.inVehicle || (player.vehicleType !== 'aero' && player.vehicleType !== 'ufo')) {
             player.jump();
         }
     }
     if (e.code === 'Space') player.shoot();
-    if (e.code === 'KeyS' && (!player.inVehicle || player.vehicleType !== 'aero')) player.useSkill();
+    if (e.code === 'KeyS' && (!player.inVehicle || (player.vehicleType !== 'aero' && player.vehicleType !== 'ufo'))) player.useSkill();
     if (e.code === 'KeyQ' || e.code === 'KeyE') player.switchWeapon();
     if (e.code === 'KeyF') player.healWithGrit();
     if (e.code === 'KeyP') player.summonPet();
@@ -1927,11 +1990,12 @@ function handleInput() {
 
     let speed = PLAYER_SPEED;
     if (player.inVehicle && player.vehicleType === 'aero') speed = PLAYER_SPEED * 1.5;
+    if (player.inVehicle && player.vehicleType === 'ufo') speed = PLAYER_SPEED * 1.2;
 
     if (keys['ArrowLeft'] || keys['KeyA']) player.dx = -speed;
     if (keys['ArrowRight'] || keys['KeyD']) player.dx = speed;
 
-    if (player.inVehicle && player.vehicleType === 'aero') {
+    if (player.inVehicle && (player.vehicleType === 'aero' || player.vehicleType === 'ufo')) {
         if (keys['ArrowUp'] || keys['KeyW']) player.dy = -speed;
         if (keys['ArrowDown'] || keys['KeyS']) player.dy = speed;
     }
@@ -2456,14 +2520,17 @@ function updateShopUI() {
     btnHeal.disabled = coins < 50 || playerHealth >= player.maxHealth || isMainMenuShop;
     btnDmg.disabled = coins < 100;
     btnMaxHp.disabled = coins < 150;
-    btnVehicle.disabled = coins < 500 || player.hasVehicle;
-    btnAero.disabled = coins < 800 || player.hasVehicle;
+    btnVehicle.disabled = coins < 150 || player.hasVehicle;
+    btnAero.disabled = coins < 200 || player.hasVehicle;
+    btnUfo.disabled = coins < 250 || player.hasVehicle;
     if (player.hasVehicle) {
         document.getElementById('vehicleBtnName').textContent = player.vehicleType === 'mech' ? "已解鎖 (按 V 呼叫)" : "互斥";
         document.getElementById('aeroBtnName').textContent = player.vehicleType === 'aero' ? "已解鎖 (按 V 呼叫)" : "互斥";
+        document.getElementById('ufoBtnName').textContent = player.vehicleType === 'ufo' ? "已解鎖 (按 V 呼叫)" : "互斥";
     } else {
         document.getElementById('vehicleBtnName').textContent = "解鎖機甲載具";
-        document.getElementById('aeroBtnName').textContent = "解鎖飛行載具";
+        document.getElementById('aeroBtnName').textContent = "解鎖飛行戰機";
+        document.getElementById('ufoBtnName').textContent = "解鎖等離子幽浮";
     }
 }
 
@@ -2498,8 +2565,8 @@ btnMaxHp.addEventListener('click', () => {
 });
 
 btnVehicle.addEventListener('click', () => {
-    if (coins >= 500 && !player.hasVehicle) {
-        updatePersistentCoins(-500);
+    if (coins >= 150 && !player.hasVehicle) {
+        updatePersistentCoins(-150);
         player.hasVehicle = true;
         player.vehicleType = 'mech';
         playSound('pickup_weapon');
@@ -2508,10 +2575,20 @@ btnVehicle.addEventListener('click', () => {
 });
 
 btnAero.addEventListener('click', () => {
-    if (coins >= 800 && !player.hasVehicle) {
-        updatePersistentCoins(-800);
+    if (coins >= 200 && !player.hasVehicle) {
+        updatePersistentCoins(-200);
         player.hasVehicle = true;
         player.vehicleType = 'aero';
+        playSound('pickup_weapon');
+        updateShopUI();
+    }
+});
+
+btnUfo.addEventListener('click', () => {
+    if (coins >= 250 && !player.hasVehicle) {
+        updatePersistentCoins(-250);
+        player.hasVehicle = true;
+        player.vehicleType = 'ufo';
         playSound('pickup_weapon');
         updateShopUI();
     }
