@@ -8,15 +8,41 @@
     <meta name="theme-color" content="#87CEEB">
     <link rel="apple-touch-icon" href="icon-192.png">
     <style>
+
+
+        /* Main Container setup for better stacking context */
         body {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             height: 100vh; margin: 0; background-color: #1a2533; font-family: 'Courier New', Courier, monospace;
-            color: white; overflow: hidden;
+            color: white; overflow: auto;
         }
+        #mainContent {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; z-index: 10;
+        }
+        @media (max-width: 1024px) {
+            #mainContent { padding-top: 20px; height: auto; justify-content: flex-start; }
+            #gameContainer { margin-bottom: 20px; width: 100%; }
+            canvas { width: 100%; height: auto; max-height: 50vh; object-fit: contain; }
+            #mobileControls { display: flex !important; position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 1000; }
+            #buttonContainer { z-index: 2000; position: relative; margin-top: 20px; }
+        }
+
+
         canvas {
             border: 2px solid #fff; background-color: #87CEEB; image-rendering: pixelated; position: relative;
         }
-        #gameContainer { position: relative; }
+
+        /* Overlay Pointer Events Fix */
+        #gameContainer { position: relative; z-index: 1; pointer-events: none; }
+        canvas { border: 2px solid #fff; background-color: #87CEEB; image-rendering: pixelated; position: relative; pointer-events: auto; }
+        #damageOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(255, 0, 0, 0.5); pointer-events: none; opacity: 0; transition: opacity 0.1s ease-in-out;
+        }
+        #buttonContainer { z-index: 2000; position: relative; margin-top: 20px; pointer-events: auto; }
+        .button { pointer-events: auto; }
+
         #damageOverlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(255, 0, 0, 0.5); pointer-events: none; opacity: 0; transition: opacity 0.1s ease-in-out;
@@ -72,9 +98,33 @@
         #gritBar { background-color: #e67e22; }
         #petSummonBar { background-color: #3498db; }
         #petStatus { color: #3498db; }
+
+
+        /* Mobile Controls */
+        #mobileControls {
+            display: none; position: absolute; bottom: 10px; left: 10px; right: 10px;
+            justify-content: space-between; z-index: 1000; pointer-events: none;
+        }
+        .control-group { display: flex; gap: 10px; pointer-events: auto; }
+        .mobile-btn {
+            background-color: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 50%;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: white; user-select: none; -webkit-user-select: none;
+        }
+        .mobile-btn:active { background-color: rgba(255, 255, 255, 0.5); }
+        @media (max-width: 1024px) {
+            body { height: auto; overflow: auto; padding: 10px 0; }
+            #gameUI { width: 100%; font-size: 14px; }
+            #controlsInfo { display: none; }
+            canvas { width: 100%; height: auto; max-height: 60vh; }
+            #mobileControls { position: fixed; bottom: 20px; }
+        }
+
     </style>
+
 </head>
 <body>
+<div id="mainContent">
     <h1>戰鬥雞：無盡征途 V2</h1>
     <div id="gameUI">
         <span id="score">分數: 0</span>
@@ -146,18 +196,35 @@
     </div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="1024" height="576"></canvas>
+        <canvas id="gameCanvas" width="1024" height="576">
+    </canvas>
+    <div id="mobileControls">
+        <div class="control-group">
+            <div class="mobile-btn" id="btnLeft">◀</div>
+            <div class="mobile-btn" id="btnRight">▶</div>
+        </div>
+        <div class="control-group">
+            <div class="mobile-btn" id="btnShoot">🎯</div>
+            <div class="mobile-btn" id="btnJump">▲</div>
+            <div class="mobile-btn" id="btnSkill">⚡</div>
+            <div class="mobile-btn" id="btnVehicle" style="font-size: 14px;">車/切</div>
+            <div class="mobile-btn" id="btnPet" style="font-size: 14px;">寵</div>
+            <div class="mobile-btn" id="btnHeal" style="font-size: 14px;">補</div>
+        </div>
+    </div>
+
         <div id="damageOverlay"></div>
     </div>
     <div id="controlsInfo">
         A D: 移動 | W: 跳躍 | 滑鼠: 瞄準 | 左鍵/空白鍵: 射擊(可按住) | S: 技能 | Q/E: 切換武器 | V: 載具 | F: 回血 | P: 寵物
     </div>
-    <div style="display: flex; gap: 20px;">
+    <div id="buttonContainer" style="display: flex; gap: 20px; z-index: 100; position: relative;">
         <button id="startButton" class="button">開始遊戲</button>
         <button id="mainShopButton" class="button" style="background-color: #f39c12; box-shadow: 0 4px 0 #d35400;">進入商店</button>
     </div>
     <div id="messageDisplay" style="font-size: 22px; margin-top: 8px; color: #e67e22;"></div>
 
+</div>
 <script>
 /* ================= 外部素材（可外連）+ 載入器 ================= */
 const ASSETS = {
@@ -488,9 +555,19 @@ const BOSS_TYPES = [
     { name: '花椰菜坦克', type: 'boss_broccoli_tank', health: 5500, width: 120, height: 100, color: '#27ae60', damage: 60, specialCooldown: 11000 },
     { name: '究極果王', type: 'boss_ultimate_fruit_king', health: 8000, width: 150, height: 150, color: '#f1c40f', damage: 75, specialCooldown: 10000 }
 ];
+const petTypes = [
+    { name: "基本雛雞", duration: 15000, cooldown: 800, damage: 5, color: '#3498db', speed: 6 },
+    { name: "烈焰火雞", duration: 20000, cooldown: 600, damage: 10, color: '#e74c3c', speed: 8 },
+    { name: "雷霆戰鷹", duration: 25000, cooldown: 400, damage: 15, color: '#f1c40f', speed: 10 }
+];
+
 const pet = {
-    active: false, worldX: 0, worldY: 0, width: 20, height: 20, duration: 15000,
-    timer: 0, lastAttackTime: 0, attackCooldown: 800, bullets: [],
+    level: 0,
+    active: false, worldX: 0, worldY: 0, width: 20, height: 20,
+    timer: 0, lastAttackTime: 0, bullets: [],
+    get type() { return petTypes[this.level]; },
+    get duration() { return this.type.duration; },
+    get attackCooldown() { return this.type.cooldown; }
 };
 
 /* ===================== 玩家（繪製加入貼圖） ===================== */
@@ -2848,6 +2925,120 @@ startButton.addEventListener('click', async () => {
     document.getElementById('startButton').textContent = "開始遊戲";
     gameLoop();
 });
+
+
+// Mobile Detection and Logic
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+if (isMobile) {
+    document.getElementById('mobileControls').style.display = 'flex';
+    document.getElementById('controlsInfo').style.display = 'none';
+
+    const addTouch = (id, key) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+
+    addTouch('btnLeft', 'KeyA');
+    addTouch('btnRight', 'KeyD');
+    addTouch('btnJump', 'KeyW'); // Used for flying vehicles
+
+    document.getElementById('btnJump').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!player.inVehicle || (player.vehicleType !== 'aero' && player.vehicleType !== 'ufo')) {
+            player.jump();
+        }
+    });
+
+    document.getElementById('btnShoot').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        player.shoot();
+    });
+
+    // Skill
+    document.getElementById('btnSkill').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!player.inVehicle || (player.vehicleType !== 'aero' && player.vehicleType !== 'ufo')) {
+            player.useSkill();
+        }
+    });
+
+    // Vehicle/Weapon toggle
+    document.getElementById('btnVehicle').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (player.hasVehicle) {
+            if (player.inVehicle) {
+                // Eject
+                player.inVehicle = false;
+                player.hasVehicle = false;
+                player.vehicleType = null;
+                createParticles(player.worldX + player.width/2, player.worldY + player.height/2, 30, '#7f8c8d', 5, false);
+                player.dy = -15; // Bounce up when exiting
+                messageDisplay.textContent = "已離開載具！";
+                setTimeout(() => messageDisplay.textContent = "", 2000);
+                healthDisplay.textContent = `生命: ${Math.ceil(playerHealth)}`;
+            } else if (!player.vehicleSummoning) {
+                // Summon
+                player.vehicleSummoning = true;
+                player.vehicleSummonTimer = 0;
+                player.vehicleSummonY = player.worldY - 200;
+                player.dx = 0; player.dy = 0;
+                playSound('skill_use');
+            }
+        } else {
+            player.switchWeapon();
+        }
+    });
+
+    // Pet
+    document.getElementById('btnPet').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        player.summonPet();
+    });
+
+    // Heal
+    document.getElementById('btnHeal').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        player.healWithGrit();
+    });
+
+    // Handle touch aiming on canvas
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        mouseX = (touch.clientX - rect.left) * scaleX;
+        mouseY = (touch.clientY - rect.top) * scaleY;
+        keys['Space'] = true; // Auto shoot on touch aim
+        isMouseDown = true;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        mouseX = (touch.clientX - rect.left) * scaleX;
+        mouseY = (touch.clientY - rect.top) * scaleY;
+    });
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        keys['Space'] = false;
+        isMouseDown = false;
+    });
+}
+
+// Ensure the game resizes properly on mobile
+function resizeCanvas() {
+    if (isMobile) {
+        // We use CSS to scale the canvas, but keep internal resolution 1024x576
+    }
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
 
 // 首次進入：初始化（不啟動）
 initGame();
