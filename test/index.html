@@ -118,12 +118,17 @@
                 <span class="name" id="aeroBtnName">解鎖飛行戰機</span>
                 <span class="price">200 金幣</span>
             </button>
-            <button id="btnUfo" class="shop-btn" style="grid-column: 1 / -1;">
+            <button id="btnUfo" class="shop-btn">
                 <span class="icon">🛸</span>
                 <span class="name" id="ufoBtnName">解鎖等離子幽浮</span>
                 <span class="price">250 金幣</span>
             </button>
-            <button id="closeShopBtn" class="shop-btn close-btn">
+            <button id="btnUpgradePet" class="shop-btn" style="grid-column: 1 / -1;">
+                <span class="icon">🦅</span>
+                <span class="name" id="upgradePetBtnName">升級寵物</span>
+                <span class="price" id="upgradePetPrice">200 金幣</span>
+            </button>
+            <button id="closeShopBtn" class="shop-btn close-btn" style="grid-column: 1 / -1;">
                 <span>繼續前進 ➔</span>
             </button>
         </div>
@@ -204,6 +209,7 @@ const petSummonText = document.getElementById('petSummonText');
 const coinsDisplay = document.getElementById('coinsDisplay');
 const shopModal = document.getElementById('shopModal');
 const shopCoinDisplay = document.getElementById('shopCoinDisplay');
+const btnUpgradePet = document.getElementById('btnUpgradePet');
 const btnHeal = document.getElementById('btnHeal');
 const btnDmg = document.getElementById('btnDmg');
 const btnMaxHp = document.getElementById('btnMaxHp');
@@ -1835,6 +1841,14 @@ function generateSegment(startX) {
 
         platforms.push(new Platform(currentX, newPlatformY, platformWidth, platformHeight, platformStyle, 'normal'));
 
+        // Feature: Add an extra layer of randomly appearing platforms to reduce fall difficulty
+        if (Math.random() < 0.3) {
+            const extraY = newPlatformY + 150 + Math.random() * 100;
+            if (extraY < canvas.height - 40) {
+                platforms.push(new Platform(currentX, extraY, platformWidth * 0.8, platformHeight, 'metal', 'normal'));
+            }
+        }
+
         if (!bossActive && Math.random() < 0.45 + currentMajorStage * 0.05) {
             const enemyRand = Math.random();
             let enemyType, enemyW, enemyH, movePattern, damage, health, isElite = false;
@@ -2049,8 +2063,11 @@ function checkCollisions() {
 
                 if (target.health <= 0) {
                     score += target.isBoss ? 500 * currentMajorStage : (target.isElite ? 50 : 10 + currentMajorStage * 2);
-                    let dropCoins = target.isBoss ? 50 * currentMajorStage : (target.isElite ? 10 : 3);
+                    let dropCoins = target.isBoss ? 200 * currentMajorStage : (target.isElite ? 40 : 15);
                     collectibles.push(new Collectible(target.worldX + target.width/2 - 10, target.worldY + target.height/2 - 10, 'coin', dropCoins));
+                    if (!target.isBoss && Math.random() < 0.5) {
+                        collectibles.push(new Collectible(target.worldX + target.width/2 + 10, target.worldY + target.height/2 - 10, 'coin', dropCoins));
+                    }
                     createParticles(target.worldX + target.width/2, target.worldY + target.height/2, 30, target.color || '#FFFFFF', 5, true);
 
                     if (target.isBoss) {
@@ -2089,8 +2106,11 @@ function checkCollisions() {
                 createParticles(bullet.worldX, bullet.worldY, 5, '#3498db', 2);
                 if (target.health <= 0) {
                     score += target.isBoss ? 500 * currentMajorStage : (target.isElite ? 50 : 10 + currentMajorStage * 2);
-                    let dropCoins = target.isBoss ? 50 * currentMajorStage : (target.isElite ? 10 : 3);
+                    let dropCoins = target.isBoss ? 200 * currentMajorStage : (target.isElite ? 40 : 15);
                     collectibles.push(new Collectible(target.worldX + target.width/2 - 10, target.worldY + target.height/2 - 10, 'coin', dropCoins));
+                    if (!target.isBoss && Math.random() < 0.5) {
+                        collectibles.push(new Collectible(target.worldX + target.width/2 + 10, target.worldY + target.height/2 - 10, 'coin', dropCoins));
+                    }
                     createParticles(target.worldX + target.width/2, target.worldY + target.height/2, 30, target.color || '#FFFFFF', 5, true);
                     if (target.isBoss) {
                     } else {
@@ -2260,11 +2280,11 @@ function updatePet() {
             pet.bullets.push({
                 worldX: pet.worldX + pet.width / 2,
                 worldY: pet.worldY + pet.height / 2,
-                speedX: Math.cos(angle) * 6,
-                speedY: Math.sin(angle) * 6,
+                speedX: Math.cos(angle) * pet.type.speed,
+                speedY: Math.sin(angle) * pet.type.speed,
                 radius: 4,
-                color: '#3498db',
-                damage: 5,
+                color: pet.type.color,
+                damage: pet.type.damage,
             });
         }
     }
@@ -2526,6 +2546,18 @@ function updateShopUI() {
     btnVehicle.disabled = coins < 150 || player.hasVehicle;
     btnAero.disabled = coins < 200 || player.hasVehicle;
     btnUfo.disabled = coins < 250 || player.hasVehicle;
+    const nextPetLevel = pet.level + 1;
+    if (nextPetLevel < petTypes.length) {
+        const upgradeCost = nextPetLevel * 200;
+        document.getElementById('upgradePetPrice').textContent = `${upgradeCost} 金幣`;
+        document.getElementById('upgradePetBtnName').textContent = `升級寵物: ${petTypes[nextPetLevel].name}`;
+        btnUpgradePet.disabled = coins < upgradeCost;
+    } else {
+        document.getElementById('upgradePetPrice').textContent = `最高等級`;
+        document.getElementById('upgradePetBtnName').textContent = `寵物滿級: ${petTypes[pet.level].name}`;
+        btnUpgradePet.disabled = true;
+    }
+
     if (player.hasVehicle) {
         document.getElementById('vehicleBtnName').textContent = player.vehicleType === 'mech' ? "已解鎖 (按 V 呼叫)" : "互斥";
         document.getElementById('aeroBtnName').textContent = player.vehicleType === 'aero' ? "已解鎖 (按 V 呼叫)" : "互斥";
@@ -2536,6 +2568,19 @@ function updateShopUI() {
         document.getElementById('ufoBtnName').textContent = "解鎖等離子幽浮";
     }
 }
+
+btnUpgradePet.addEventListener('click', () => {
+    const nextPetLevel = pet.level + 1;
+    if (nextPetLevel < petTypes.length) {
+        const upgradeCost = nextPetLevel * 200;
+        if (coins >= upgradeCost) {
+            updatePersistentCoins(-upgradeCost);
+            pet.level++;
+            playSound('pickup_weapon');
+            updateShopUI();
+        }
+    }
+});
 
 btnHeal.addEventListener('click', () => {
     if (coins >= 50 && playerHealth < player.maxHealth) {
@@ -2792,7 +2837,6 @@ startButton.addEventListener('click', async () => {
     if (audioCtx && audioCtx.state === 'suspended') {
         try { await audioCtx.resume(); } catch (e) {}
     }
-
     // 先載外部素材
     await preloadAll();
 
@@ -2809,12 +2853,12 @@ startButton.addEventListener('click', async () => {
 initGame();
 draw();
 
-// Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then((registration) => {
+        navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, (err) => {
+        }, err => {
             console.log('ServiceWorker registration failed: ', err);
         });
     });
