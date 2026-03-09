@@ -99,6 +99,7 @@
             justify-content: space-between; z-index: 1000; pointer-events: none;
         }
         .control-group { display: flex; gap: 10px; pointer-events: auto; }
+        .d-pad, .action-buttons { pointer-events: auto; }
         .mobile-btn {
             background-color: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 50%;
             width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
@@ -287,7 +288,9 @@
             <div class="mobile-btn" id="btnRight">▶</div>
         </div>
         <div class="action-buttons">
-            <div class="mobile-btn" id="btnShoot">🎯</div>
+            <div class="mobile-btn" id="joystickAim" style="position: relative; overflow: hidden; background-color: #2c3e50;">
+                <div id="joystickKnob" style="position: absolute; width: 30px; height: 30px; background-color: #ecf0f1; border-radius: 50%; top: 10px; left: 10px; transition: transform 0.1s;"></div>
+            </div>
             <div class="mobile-btn" id="btnJump">▲</div>
             <div class="mobile-btn" id="btnSkill">⚡</div>
             <div class="mobile-btn" id="btnVehicle" style="font-size: 14px;">車/切</div>
@@ -2821,6 +2824,10 @@ closeShopBtn.addEventListener('click', () => {
 document.getElementById('mainShopButton').addEventListener('click', () => {
     showShop(true);
 });
+document.getElementById('mainShopButton').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    showShop(true);
+});
 
 /* ===================== 介面畫面 ===================== */
 
@@ -2986,7 +2993,7 @@ function draw() {
 }
 
 /* ===================== 啟動 ===================== */
-startButton.addEventListener('click', async () => {
+async function startGameHandler() {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
@@ -3004,7 +3011,9 @@ startButton.addEventListener('click', async () => {
     document.getElementById('mainShopButton').style.display = 'none';
     document.getElementById('startButton').textContent = "開始遊戲";
     gameLoop();
-});
+}
+startButton.addEventListener('click', startGameHandler);
+startButton.addEventListener('touchstart', (e) => { e.preventDefault(); startGameHandler(); });
 
 
 // Mobile Detection and Logic
@@ -3030,10 +3039,55 @@ if (isMobile) {
         }
     });
 
-    document.getElementById('btnShoot').addEventListener('touchstart', (e) => {
+    // Joystick Aim & Shoot logic
+    const joystickAim = document.getElementById('joystickAim');
+    const joystickKnob = document.getElementById('joystickKnob');
+    let joystickActive = false;
+    let joystickCenter = { x: 0, y: 0 };
+
+    joystickAim.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        player.shoot();
+        joystickActive = true;
+        const rect = joystickAim.getBoundingClientRect();
+        joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        joystickKnob.style.transition = 'none'; // remove transition while dragging
+        updateJoystick(e.touches[0]);
+        keys['Space'] = true; // Auto shoot when aiming
+        isMouseDown = true;
     });
+
+    joystickAim.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (joystickActive) {
+            updateJoystick(e.touches[0]);
+        }
+    });
+
+    joystickAim.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        joystickActive = false;
+        joystickKnob.style.transition = 'transform 0.1s';
+        joystickKnob.style.transform = 'translate(0px, 0px)';
+        keys['Space'] = false;
+        isMouseDown = false;
+    });
+
+    function updateJoystick(touch) {
+        const dx = touch.clientX - joystickCenter.x;
+        const dy = touch.clientY - joystickCenter.y;
+        const maxDist = 20; // knob max travel distance
+        const angle = Math.atan2(dy, dx);
+        const dist = Math.min(Math.sqrt(dx * dx + dy * dy), maxDist);
+
+        const knobX = Math.cos(angle) * dist;
+        const knobY = Math.sin(angle) * dist;
+
+        joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+        // Update player aim based on joystick direction
+        mouseX = player.worldX - cameraX + player.width / 2 + Math.cos(angle) * 100;
+        mouseY = player.worldY + player.height / 2 + Math.sin(angle) * 100;
+    }
 
     // Skill
     document.getElementById('btnSkill').addEventListener('touchstart', (e) => {
