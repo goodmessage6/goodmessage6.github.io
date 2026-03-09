@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1024, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>戰鬥雞：無盡征途 v2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#87CEEB">
@@ -19,13 +19,6 @@
         #mainContent {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             width: 100%; height: 100%; z-index: 10;
-        }
-        @media (max-width: 1024px) {
-            #mainContent { padding-top: 20px; height: auto; justify-content: flex-start; }
-            #gameContainer { margin-bottom: 20px; width: 100%; }
-            canvas { width: 100%; height: auto; max-height: 50vh; object-fit: contain; }
-            #mobileControls { display: flex !important; position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 1000; }
-            #buttonContainer { z-index: 2000; position: relative; margin-top: 20px; }
         }
 
 
@@ -110,45 +103,93 @@
             background-color: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 50%;
             width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
             font-size: 24px; color: white; user-select: none; -webkit-user-select: none;
+            touch-action: manipulation;
         }
         .mobile-btn:active { background-color: rgba(255, 255, 255, 0.5); }
 
-        #orientationWarning {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #1a1a2e; color: white; z-index: 9999;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center;
-            font-size: 24px; padding: 20px; box-sizing: border-box;
-        }
-
-        #orientationWarning p { margin: 10px 0; }
-        #orientationWarning span { font-size: 48px; display: block; margin-bottom: 20px; transform: rotate(90deg); }
-
-        @media (orientation: portrait) and (max-width: 1024px) {
-            #orientationWarning.show { display: flex !important; }
-            #mainContent.hidden { display: none !important; }
-        }
-
         @media (max-width: 1024px) {
-            body { height: auto; overflow: hidden; padding: 0; margin: 0; }
+            body {
+                height: 100vh; width: 100vw; overflow: hidden; padding: 0; margin: 0;
+                background-color: #2c3e50; /* Console body color */
+                display: flex; flex-direction: column; justify-content: flex-start;
+            }
+            #mainContent {
+                height: 100%; width: 100%; justify-content: flex-start;
+                transform: none !important; margin: 0 !important;
+            }
             h1 { display: none; }
-            #gameUI { width: 100vw; font-size: 14px; padding: 5px; box-sizing: border-box; }
+            #gameUI { width: 100vw; font-size: 12px; padding: 5px; box-sizing: border-box; background: #1a2533; z-index: 10; flex-shrink: 0; }
             #controlsInfo { display: none; }
-            canvas { width: 100vw; height: 100vh; max-height: 100vh; object-fit: contain; }
-            #mobileControls { position: fixed; bottom: 10px; width: 95vw; left: 2.5vw; right: 2.5vw; }
-            .mobile-btn { width: 50px; height: 50px; font-size: 20px; }
-            .control-group { gap: 5px; }
-        }
 
+            /* Top half: Screen */
+            #gameContainer {
+                width: 100vw;
+                flex-shrink: 0;
+            }
+            canvas {
+                width: 100vw;
+                height: auto;
+                max-height: 50vh;
+                object-fit: contain;
+                background-color: #000;
+                border: none;
+                flex-shrink: 0;
+                display: block;
+            }
+
+            /* Bottom half: Controller Area */
+            #mobileControls {
+                position: relative;
+                display: flex !important;
+                flex-direction: row;
+                bottom: 0;
+                width: 100vw;
+                height: 100%;
+                background: #bdc3c7; /* Controller faceplate */
+                border-top: 4px solid #7f8c8d;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 20px;
+                box-sizing: border-box;
+                z-index: 10;
+            }
+
+            .control-group { gap: 10px; }
+
+            /* Left D-Pad */
+            .d-pad {
+                display: flex;
+                gap: 10px;
+            }
+
+            /* Right Action Buttons Grid */
+            .action-buttons {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                gap: 5px;
+            }
+
+            .mobile-btn {
+                width: 50px; height: 50px; font-size: 20px;
+                background-color: #34495e; color: #ecf0f1;
+                border: 3px solid #2c3e50;
+                box-shadow: 0 4px 0 #2c3e50;
+                border-radius: 50%;
+            }
+            .mobile-btn:active {
+                background-color: #2c3e50;
+                transform: translateY(4px);
+                box-shadow: 0 0 0 #2c3e50;
+            }
+
+            /* Special D-Pad shapes */
+            #btnLeft, #btnRight { border-radius: 10px; width: 70px; height: 60px; }
+        }
     </style>
 
 </head>
 <body>
-    <div id="orientationWarning">
-        <span>📱</span>
-        <p>請將手機旋轉至橫向</p>
-        <p style="font-size: 16px; color: #aaa;">以獲得最佳遊戲體驗</p>
-    </div>
-
 <div id="mainContent">
     <h1>戰鬥雞：無盡征途 V2</h1>
     <div id="gameUI">
@@ -221,14 +262,16 @@
     </div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="1024" height="576">
-    </canvas>
+        <canvas id="gameCanvas" width="1024" height="576"></canvas>
+        <div id="damageOverlay"></div>
+    </div>
+
     <div id="mobileControls">
-        <div class="control-group">
+        <div class="d-pad">
             <div class="mobile-btn" id="btnLeft">◀</div>
             <div class="mobile-btn" id="btnRight">▶</div>
         </div>
-        <div class="control-group">
+        <div class="action-buttons">
             <div class="mobile-btn" id="btnShoot">🎯</div>
             <div class="mobile-btn" id="btnJump">▲</div>
             <div class="mobile-btn" id="btnSkill">⚡</div>
@@ -236,9 +279,6 @@
             <div class="mobile-btn" id="btnPet" style="font-size: 14px;">寵</div>
             <div class="mobile-btn" id="btnHeal" style="font-size: 14px;">補</div>
         </div>
-    </div>
-
-        <div id="damageOverlay"></div>
     </div>
     <div id="controlsInfo">
         A D: 移動 | W: 跳躍 | 滑鼠: 瞄準 | 左鍵/空白鍵: 射擊(可按住) | S: 技能 | Q/E: 切換武器 | V: 載具 | F: 回血 | P: 寵物
@@ -3055,30 +3095,6 @@ if (isMobile) {
     });
 }
 
-// Ensure the game resizes properly on mobile
-function checkOrientation() {
-    if (isMobile) {
-        const warning = document.getElementById('orientationWarning');
-        const mainContent = document.getElementById('mainContent');
-        if (window.innerHeight > window.innerWidth) {
-            // Portrait
-            warning.classList.add('show');
-            mainContent.classList.add('hidden');
-            if (gameRunning && !bossActive && !gameOver) {
-                // Optionally pause the game if they rotate during play
-            }
-        } else {
-            // Landscape
-            warning.classList.remove('show');
-            mainContent.classList.remove('hidden');
-        }
-    }
-}
-window.addEventListener('resize', checkOrientation);
-window.addEventListener('orientationchange', checkOrientation);
-checkOrientation();
-
-
 // 首次進入：初始化（不啟動）
 initGame();
 draw();
@@ -3088,6 +3104,17 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
         .then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
+
+            // Listen for updates and reload if there's a new version
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('New version available. Reloading...');
+                        window.location.reload();
+                    }
+                });
+            });
         }, err => {
             console.log('ServiceWorker registration failed: ', err);
         });
